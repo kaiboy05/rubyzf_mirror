@@ -13,10 +13,17 @@ theorem succ_add_1: "n:nat ==> succ(n) = n #+ 1"
 apply(auto)
 done
 
+lemma neq_0_lt_0: "[| m #- n ~= 0; m:nat; n:nat |] ==> 0 < m #- n"
+apply(rule Ord_0_lt)
+apply(auto)
+done
 
 theorem diff_le_0: "[| m \<le> n; n:nat; m:nat |] ==> m #- n = 0"
-
-oops
+apply(rule ccontr)
+apply(drule le_imp_not_lt)
+apply(drule neq_0_lt_0, assumption+)
+apply(simp add: less_diff_conv)
+done
 
 theorem add_lt_n: "[| x #+ n < y #+ n; n:nat; x:nat; y:nat |] ==> x < y"
 apply(rule_tac k = "n" in add_lt_elim1)
@@ -28,19 +35,30 @@ theorem diff_lt_0: "[| m < n; n:nat; m:nat |] ==> 0 < n #- m"
 apply(simp add: less_diff_conv)
 done
 
+
 theorem diff_add_comm: "[| m < n; n:nat; m:nat; k:nat|] ==> n #+ k #- m = k #+ (n #- m)"
+apply(simp add: add_commute)
+apply(drule diff_lt_0, assumption+)
 oops
 
 theorem n_gt_0_succ: "[| 0 < n; n: nat; !!x. [| n = succ(x); x:nat |] ==> P |] ==> P"
 by(erule zero_lt_natE)
 
+find_theorems name: raw_mult
+thm mult_def
+
 theorem mult_le_self: "[| 0 < m; n:nat; m:nat |] ==> n \<le> n #* m"
 oops
 
 theorem gt_not0: "[| 0 < n; n:nat |] ==> n~= 0"
-oops
+apply(auto)
+done
+
+find_theorems "succ(_) = _ #+ _"
+find_theorems name: sym
 
 theorem diff_succ: "[| m \<le> n; n:nat; m:nat |] ==> succ(n) #- m = succ(n #- m)"
+apply(unfold succ_add_1)
 oops
 
 theorem diff_diff_inverse: "[| m < n; n:nat; m:nat |] ==> n #- (n #- m) = m"
