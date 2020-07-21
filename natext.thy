@@ -13,8 +13,9 @@ theorem succ_add_1: "n:nat ==> succ(n) = n #+ 1"
 apply(auto)
 done
 
+
 theorem diff_le_0: "[| m \<le> n; n:nat; m:nat |] ==> m #- n = 0"
-apply(auto simp: diff_def)
+
 oops
 
 theorem add_lt_n: "[| x #+ n < y #+ n; n:nat; x:nat; y:nat |] ==> x < y"
@@ -24,7 +25,8 @@ apply(assumption+)
 done
 
 theorem diff_lt_0: "[| m < n; n:nat; m:nat |] ==> 0 < n #- m"
-oops
+apply(simp add: less_diff_conv)
+done
 
 theorem diff_add_comm: "[| m < n; n:nat; m:nat; k:nat|] ==> n #+ k #- m = k #+ (n #- m)"
 oops
