@@ -47,7 +47,17 @@ by(erule zero_lt_natE)
 find_theorems name: raw_mult
 thm mult_def
 
+find_theorems "_ #+ _ \<le> _"
+find_theorems "0 #+ _"
+
+thm add_le_mono1
+
+lemma refl_add_help: "[| n:nat; m:nat |] ==> 0 #+ n \<le> m #+ n" 
+by(rule add_le_mono1, simp)
+
 theorem mult_le_self: "[| 0 < m; n:nat; m:nat |] ==> n \<le> n #* m"
+apply(case_tac m, auto)
+apply(simp add: refl_add_help)
 oops
 
 theorem gt_not0: "[| 0 < n; n:nat |] ==> n~= 0"
@@ -61,31 +71,48 @@ theorem diff_succ: "[| m \<le> n; n:nat; m:nat |] ==> succ(n) #- m = succ(n #- m
 apply(unfold succ_add_1)
 oops
 
+find_theorems "_ #- _"
+
 theorem diff_diff_inverse: "[| m < n; n:nat; m:nat |] ==> n #- (n #- m) = m"
 oops
 
 theorem add_0_eq_0: "[| n #+ m = 0; m:nat; n:nat |] ==> n = 0"
-oops
+apply(case_tac m)
+apply(auto)
+done
+
+find_theorems "_ #* _ = _ #* _"
 
 theorem mult_cancel: "[| n #* m = n #* p; 0 < n; n:nat; m:nat; p:nat |] ==> m = p"
 oops
 
+find_theorems "_ mod _"
+find_theorems "raw_mod"
+
+declare nats_def [simp]
+
 theorem mod_dep_type: "[| 0 < n; m:nat; n:nat |] ==> m mod n :nats(n)"
+apply(auto)
 oops
 
 theorem mod_lt: "[| 0 < n; m:nat; n:nat |] ==> m mod n < n"
 oops
 
+find_theorems "_ < _ \<Longrightarrow>_ : _"
+find_theorems "_ < _" name: Ordinal
+
 theorem natsI: "[| m:nat; n:nat; m:n |] ==> m :nats(n)"
-oops
+apply(auto)
+by(rule ltI, simp_all)
 
 theorem natsI2: "q:{ m:nat. m < n } ==> q: nats(n)"
-by(simp add: nats_def)
+by(simp)
 
 theorem natsE: "[| m:nats(n); n:nat; [| m:nat; m < n |] ==> P |] ==> P"
-oops
+by(auto)
 
 theorem ball_lt_nats: "[| ALL j:nats(succ(n)). p(j); ALL j:nats(n). p(j) ==> P; n:nat |] ==> P"
+  apply(auto)
 oops
 
 theorem mod_mult_self: "[| t:nat; n:nat; 0 < n; j:nats(n) |] ==> (n #* t #+ j) mod n = j"
