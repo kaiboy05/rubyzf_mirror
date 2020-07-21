@@ -18,7 +18,10 @@ apply(auto simp: diff_def)
 oops
 
 theorem add_lt_n: "[| x #+ n < y #+ n; n:nat; x:nat; y:nat |] ==> x < y"
-oops
+apply(rule_tac k = "n" in add_lt_elim1)
+apply(simp add: add_commute)
+apply(assumption+)
+done
 
 theorem diff_lt_0: "[| m < n; n:nat; m:nat |] ==> 0 < n #- m"
 oops
