@@ -31,6 +31,18 @@ apply(simp add: add_commute)
 apply(assumption+)
 done
 
+lemma lt_imp_neq: "x < y \<Longrightarrow> x \<noteq> y"
+apply(auto)
+done
+
+theorem add_lt_reverse: "\<lbrakk> m < n; x #+ n = m #+ y; x:nat; y:nat; n:nat; m:mat \<rbrakk> \<Longrightarrow> x < y"
+apply(rule ccontr)
+apply(simp add: not_lt_iff_le)
+apply(drule add_lt_le_mono, auto)
+apply((drule lt_imp_neq)+)
+apply(simp add: add_commute)
+done
+
 theorem diff_lt_0: "[| m < n; n:nat; m:nat |] ==> 0 < n #- m"
 apply(simp add: less_diff_conv)
 done
@@ -64,9 +76,6 @@ theorem gt_not0: "[| 0 < n; n:nat |] ==> n~= 0"
 apply(auto)
 done
 
-find_theorems "succ(_) = _ #+ _"
-find_theorems name: sym
-
 theorem diff_succ: "[| m \<le> n; n:nat; m:nat |] ==> succ(n) #- m = succ(n #- m)"
 apply(unfold succ_add_1)
 oops
@@ -81,13 +90,8 @@ apply(case_tac m)
 apply(auto)
 done
 
-find_theorems "_ #* _ = _ #* _"
-
 theorem mult_cancel: "[| n #* m = n #* p; 0 < n; n:nat; m:nat; p:nat |] ==> m = p"
-oops
-
-find_theorems "_ mod _"
-find_theorems "raw_mod"
+  oops
 
 declare nats_def [simp]
 
@@ -97,9 +101,6 @@ oops
 
 theorem mod_lt: "[| 0 < n; m:nat; n:nat |] ==> m mod n < n"
 oops
-
-find_theorems "_ < _ \<Longrightarrow>_ : _"
-find_theorems "_ < _" name: Ordinal
 
 theorem natsI: "[| m:nat; n:nat; m:n |] ==> m :nats(n)"
 apply(auto)
@@ -111,9 +112,14 @@ by(simp)
 theorem natsE: "[| m:nats(n); n:nat; [| m:nat; m < n |] ==> P |] ==> P"
 by(auto)
 
+lemma ball_le_nat: "n:nat \<Longrightarrow> ALL j:nat. j \<le> n \<longrightarrow> p(j) \<Longrightarrow> 
+ALL j:nat. j < n \<longrightarrow> p(j)"
+apply(auto)
+by(drule leI, auto)
+
 theorem ball_lt_nats: "[| ALL j:nats(succ(n)). p(j); ALL j:nats(n). p(j) ==> P; n:nat |] ==> P"
-  apply(auto)
-oops
+apply(auto)
+by(drule ball_le_nat)
 
 theorem mod_mult_self: "[| t:nat; n:nat; 0 < n; j:nats(n) |] ==> (n #* t #+ j) mod n = j"
 oops
