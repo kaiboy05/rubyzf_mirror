@@ -56,21 +56,14 @@ oops
 theorem n_gt_0_succ: "[| 0 < n; n: nat; !!x. [| n = succ(x); x:nat |] ==> P |] ==> P"
 by(erule zero_lt_natE)
 
-find_theorems name: raw_mult
-thm mult_def
-
-find_theorems "_ #+ _ \<le> _"
-find_theorems "0 #+ _"
-
-thm add_le_mono1
-
 lemma refl_add_help: "[| n:nat; m:nat |] ==> 0 #+ n \<le> m #+ n" 
 by(rule add_le_mono1, simp)
 
 theorem mult_le_self: "[| 0 < m; n:nat; m:nat |] ==> n \<le> n #* m"
-apply(case_tac m, auto)
-apply(simp add: refl_add_help)
-oops
+apply (case_tac m, simp)
+apply (frule_tac ?m="n #* x" in refl_add_help)
+apply (auto simp add: add_commute)
+done
 
 theorem gt_not0: "[| 0 < n; n:nat |] ==> n~= 0"
 apply(auto)
