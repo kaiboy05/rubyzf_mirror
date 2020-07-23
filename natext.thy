@@ -176,4 +176,12 @@ apply(drule zero_lt_lemma, auto)
 apply(induct_tac ja, auto)
 by(rule mod_diff_induct_lemma)
 
+find_theorems name: mod_type
+
+declare add_0_right 
+        mult_0_right 
+        add_diff_inverse 
+        diff_add_inverse 
+        diff_add_0          [simp]
+
 end
