@@ -399,25 +399,68 @@ proof -
   then show "z = w" using g by(auto)
 qed
 
+theorem zmult_cancel_int:
+  "\<lbrakk> n $* z = n $* w; z:int; w:int; n:int; n \<noteq> $# 0 \<rbrakk> \<Longrightarrow> z = w"
+apply(subgoal_tac 
+      "(znegative(n) & n = $- $#(zmagnitude(n))) | (~znegative(n) & n = $#(zmagnitude(n)))")
+apply(erule disjE)
+proof -
+  assume a: "n $* z = n $* w" "z:int" "w:int" 
+            "znegative(n) \<and> n = $- $# zmagnitude(n)" and
+         ab: "n:int" "n \<noteq> $# 0"
+  then have "($- $# zmagnitude(n)) $* z = ($- $# zmagnitude(n)) $* w" by simp
+  then have "$- $# zmagnitude(n) $* z = $- $# zmagnitude(n) $* w" by simp
+  then have b: "$# zmagnitude(n) $* z = $# zmagnitude(n) $* w" 
+    using zminus_inject a ab by simp
+  then have "0 < zmagnitude(n)" using zneg_zmag_0_lt a ab by simp
+  then show "z = w" using a b zmult_cancel[of "zmagnitude(n)" z w] by simp
+next
+  assume a: "n $* z = n $* w" "z:int" "w:int"
+            "~znegative(n) \<and> n = $# zmagnitude(n)" and
+        ab: "n:int" "n \<noteq> $# 0" 
+  then have "$# zmagnitude(n) $* z = $# zmagnitude(n) $* w" by simp
+  then have b: "$# zmagnitude(n) $* z = $# zmagnitude(n) $* w" 
+    using zminus_inject a by simp
+  have "zmagnitude(n) \<noteq> 0" using zmag_0_eq_0_iff[of n] ab by simp
+  then have "0 < zmagnitude(n)" using zmagnitude_type Ord_0_lt by simp
+  then show "z = w" using a b zmult_cancel[of "zmagnitude(n)" z w] by simp
+next
+  assume a: "n:int"
+  then show "znegative(n) \<and> n = $- $# zmagnitude(n) \<or> \<not> znegative(n) \<and> n = $# zmagnitude(n)"
+    using int_rep by simp
+qed
+
 declare zmod_def [simp]
 
 theorem zmod_dep_type:
-  "\<lbrakk> 0 < n; m:int; n:nat \<rbrakk> \<Longrightarrow> m $// n : nats(n)"
+  "\<lbrakk> 0 < n; m:int; n:nat \<rbrakk> \<Longrightarrow> (m $// n) : nats(n)"
 apply(auto)
-oops
+proof -
+  assume a: "0 < n" "m \<in> int" "n \<in> nat" "zmagnitude(m) mod n \<noteq> 0" "znegative(m)"
+  then have b: "0 < zmagnitude(m) mod n" using mod_type Ord_0_lt by simp
+  have "zmagnitude(m) mod n < n" 
+    using mod_less_divisor[of n "zmagnitude(m)"] using a by simp
+  then have "zmagnitude(m) mod n \<le> n" using leI by simp
+  then show "n #- zmagnitude(m) mod n < n" 
+    using div_termination[of "zmagnitude(m) mod n" n] a b by simp
+next
+  assume a: "0 < n" "m \<in> int" "n \<in> nat" "zmagnitude(m) mod n \<noteq> 0" "~znegative(m)"
+  show "zmagnitude(m) mod n < n" 
+    using mod_less_divisor[of n "zmagnitude(m)"] using a by simp
+qed
 
 theorem zmod_less_pos:
-  "\<lbrakk> 0 < n; m:int; zmagnitude(m) < n; ~znegative(m) \<rbrakk>
+  "\<lbrakk> 0 < n; m:int; n:nat; zmagnitude(m) < n; ~znegative(m)\<rbrakk>
     \<Longrightarrow> m $// n = zmagnitude(m)"
 apply(auto)
-oops
+done
 
 theorem zmod_less_neg:
-  "\<lbrakk> 0 < n; m:int; zmagnitude(m) < n; znegative(m);
+  "\<lbrakk> 0 < n; m:int; n:nat; zmagnitude(m) < n; znegative(m);
     zmagnitude(m) mod n \<noteq> 0 \<rbrakk>
     \<Longrightarrow> m $// n = n #- zmagnitude(m)"
 apply(auto)
-oops
+done
 
 theorem zmod_pos:
   "\<lbrakk> 0 < n; m:int; ~znegative(m) \<rbrakk> 
@@ -444,17 +487,20 @@ theorem zdiv_type:
 apply(auto)
 done
 
+find_theorems name: div
+
 theorem zdiv_less_pos:
-  "\<lbrakk> 0 < n; m:int; zmagnitude(m) < n; ~znegative(m) \<rbrakk>
+  "\<lbrakk> 0 < n; m:int; n:nat; zmagnitude(m) < n; ~znegative(m) \<rbrakk>
     \<Longrightarrow> m $/ n = $#0"
 apply(auto)
-oops
+done
 
 theorem zdiv_less_neg:
   "\<lbrakk> 0 < n; m:int; n:nat; zmagnitude(m) < n; znegative(m) \<rbrakk>
-    \<Longrightarrow> m $/ n = $#0"
-
-oops
+    \<Longrightarrow> m $/ n = $- $#1"
+apply(auto)
+apply(drule zmag_0_eq_0_iff, simp)
+done
 
 theorem zdiv_geq_pos:
   "\<lbrakk> 0 < n; m:int; n:nat; n \<le> zmagnitude(m); ~znegative(m) \<rbrakk>
@@ -476,41 +522,149 @@ theorem zdiv_geq_neg_not0:
 apply(auto)
 done
 
-theorem zmod_zdiv_equality:
-  "\<lbrakk> 0 < n; m:int; n:nat \<rbrakk>
-    \<Longrightarrow> (m $/ n) $* $#n $+ $#(m $// n) = m"
+lemma same_eq_minus: "m = k \<Longrightarrow> m #- n = k #- n"
+apply(auto)
+done
 
-oops
+theorem zmod_zdiv_equality: "\<lbrakk> 0 < n; m:int; n:nat \<rbrakk> \<Longrightarrow> (m $/ n) $* $#n $+ $#(m $// n) = m"
+apply(auto)
+apply(subst int_zneg_zmag_iff, auto)
+apply(insert div_type[of "zmagnitude(m)" n])
+apply(insert znat_mult[of "zmagnitude(m) div n" n, THEN sym], auto)
+apply(rule znegative_minus_int_of, simp)
+apply(rule ccontr, auto)
+apply(insert mod_div_equality[of "zmagnitude(m)" n, THEN sym], auto)
+apply(insert zmag_0_eq_0_iff[of m], auto)
+prefer 2
+apply(insert int_of_add[of "zmagnitude(m) div n #* n" "(zmagnitude(m) mod n)", THEN sym], auto)
+apply(subst succ_add_1, simp)
+apply(rule zminus_inject, auto)
+proof -
+  assume a: "0 < n" "m:int" "n:nat" "znegative(m)" "zmagnitude(m) mod n \<noteq> 0" "m \<noteq> $# 0"
+      and ab: "zmagnitude(m) = zmagnitude(m) div n #* n #+ zmagnitude(m) mod n"
+  then have b: "$# succ(zmagnitude(m) div n) $* $# n $+ $- $# (n #- zmagnitude(m) mod n)
+            = $# (succ(zmagnitude(m) div n) #* n) $+ $- $# (n #- zmagnitude(m) mod n)" 
+    using znat_mult[of "succ(zmagnitude(m) div n)" n] by simp
+  then have c: "$# (succ(zmagnitude(m) div n) #* n) $+ $- $# (n #- zmagnitude(m) mod n)
+            = $# (succ(zmagnitude(m) div n) #* n) $- $# (n #- zmagnitude(m) mod n)" 
+    using zdiff_def by simp
+  then have d: "$# (succ(zmagnitude(m) div n) #* n) $- $# (n #- zmagnitude(m) mod n)
+            = $# (succ(zmagnitude(m) div n) #* n) $- $# (n #- zmagnitude(m) mod n)" 
+    using zdiff_def by simp
+  have e: "n \<le> succ(zmagnitude(m) div n) #* n" using a by(auto)
+  have "n #- zmagnitude(m) mod n \<le> n" using diff_le_self a by(auto)
+  then have "n #- zmagnitude(m) mod n \<le> succ(zmagnitude(m) div n) #* n" 
+    using le_trans e by simp
+  then have f: "$# (succ(zmagnitude(m) div n) #* n) $- $# (n #- zmagnitude(m) mod n)
+            = $# ((succ(zmagnitude(m) div n) #* n) #- (n #- zmagnitude(m) mod n))" 
+    using int_of_diff a by simp
+  then have g: "$# ((succ(zmagnitude(m) div n) #* n) #- (n #- zmagnitude(m) mod n))
+            =  $# (((zmagnitude(m) div n #+ 1) #* n) #- (n #- zmagnitude(m) mod n))"
+    using a by(auto)
+  have h: "$#((zmagnitude(m) div n #+ 1) #* n #- (n #- zmagnitude(m) mod n))
+        = $#(zmagnitude(m) div n #* n #+ 1 #* n #- (n #- zmagnitude(m) mod n))" 
+    using add_mult_distrib[of "(zmagnitude(m) div n)" 1 n] 
+          same_eq_minus by simp
+  have i: "$#(zmagnitude(m) div n #* n #+ 1 #* n #- (n #- zmagnitude(m) mod n))
+        = $#(zmagnitude(m) div n #* n #+ n #- (n #- zmagnitude(m) mod n))" by simp
+  have mod_less_self: "zmagnitude(m) mod n < n" using mod_less_divisor a by simp
+  then have "zmagnitude(m) mod n \<le> n" using leI by simp
+  then have "n #- zmagnitude(m) mod n < n" 
+    using div_termination[of "zmagnitude(m) mod n" n] a Ord_0_lt_iff by(auto)
+  then have j: "$#(zmagnitude(m) div n #* n #+ n #- (n #- zmagnitude(m) mod n))
+        = $#(zmagnitude(m) div n #* n #+ (n #- (n #- zmagnitude(m) mod n)))" 
+    using diff_add_assoc[of "n #- zmagnitude(m) mod n" n "zmagnitude(m) div n #* n"] a by(auto)
+  have k: " $#(zmagnitude(m) div n #* n #+ (n #- (n #- zmagnitude(m) mod n)))
+            =  $#(zmagnitude(m) div n #* n #+ zmagnitude(m) mod n)"
+    using diff_diff_inverse mod_less_self a by(auto)
+  have "$#(zmagnitude(m) div n #* n #+ zmagnitude(m) mod n)
+            = $#(zmagnitude(m))" using ab by(auto)
+  then have "$# succ(zmagnitude(m) div n) $* $# n $+ $- $# (n #- zmagnitude(m) mod n)
+            =  $#(zmagnitude(m))" using b c d f g h i j k by(auto)
+  then have "$# succ(zmagnitude(m) div n) $* $# n $+ $- $# (n #- zmagnitude(m) mod n)
+            = $- m" using zneg_zmag[of m] a by(auto)
+  then show "$# succ(zmagnitude(m) div n) $* $# n $+ $- $# (n #- zmagnitude(m) mod n) = $- m"
+    by simp
+qed
 
 theorem int_factorise:
-  "ALL t':int. ALL n:{z:nat. 0 < x}. EX t:int. EX j:nats(n).
-    t $* $#n $+ $#j = t"
+  "ALL t':int. ALL n:{x:nat. 0 < x}. EX t:int. EX j:nats(n).
+    t $* $#n $+ $#j = t'"
+apply(auto)
+apply(rename_tac l n)
+apply(rule bexI)
+apply(rule bexI)
+apply(rule conjI)
+proof -
+  fix n l
+  assume a: "n:nat" "l:int" "0 < n"
+  then have main: "(l $/ n) $* $# n $+ $#(l $// n) = l" 
+    using zmod_zdiv_equality[of n l] by(simp)
+  have b: "l $// n:nats(n)" using zmod_dep_type a by(auto)
+  have c: "l $/ n:int" using a by(auto)
+  let ?j25 = "l $// n"
+  show lt_n: "?j25 < n" using a zmod_dep_type by(auto)
+  have d: "(l $/ n) $* $#n $+ $# ?j25 = l" using main by(auto)
+  let ?t22 = "l $/ n"
+  show "?t22 $* $#n $+ $# ?j25 = l" using d main by(auto)
+  show "l $// n:nat" using a by(auto)
+  show "l $/ n:int" using a by(auto)
+qed
 
-oops
+find_theorems zmult
 
 theorem int_factorise2:
   "\<lbrakk> t':int; n:{x:nat. 0 < x} \<rbrakk>
     \<Longrightarrow> EX t:int. EX j:nats(n). $#n $* t $+ $#j = t'"
+apply(simp only: zmult_commute)
+apply(insert int_factorise, simp)
+done
 
-oops
+lemma mult_lt_keeps_ineqaulity: "\<lbrakk> a:nat; b:nat; c:nat; a < b; 0 < c \<rbrakk> \<Longrightarrow> a < b #* c"
+apply(case_tac c, auto)
+apply(insert add_lt_larger_side_help[of b a _], simp)
+done
 
 theorem mult_zmag_gt:
   "\<lbrakk> n:nat; 0 < n; t:int; znegative(t); j:nat; j < n \<rbrakk>
     \<Longrightarrow> j < n #* zmagnitude(t)"
-
-oops
+apply(drule zneg_zmag_0_lt, auto)
+apply(rule mult_lt_keeps_ineqaulity, auto)
+done
 
 theorem zneg_nt_simp:
   "\<lbrakk> n:nat; 0 < n; t:int; j:nat; j < n; znegative(t) \<rbrakk>
     \<Longrightarrow> $# n $* t $+ $# j = $-$#(n #* zmagnitude(t) #- j)"
-
-oops
+proof -
+  assume a: "znegative(t)" "t:int" "n:nat" "j < n" "j:nat"
+  then have "$# n $* t = $# n $* ($- $# zmagnitude(t))" using int_rep[of t] by simp
+  then have "$# n $* t = $- $# n $* $# zmagnitude(t)" by simp
+  then have "$# n $* t $+ $# j= $- $# n $* $# zmagnitude(t) $+ $# j" by simp
+  then have "$# n $* t $+ $# j=  $# j $+ $- $# n $* $# zmagnitude(t)" 
+    using zadd_commute by simp
+  then have "$# n $* t $+ $# j=  $# j $- $# n $* $# zmagnitude(t)" using zdiff_def by simp
+  then have "$# n $* t $+ $# j=  $- ($# n $* $# zmagnitude(t) $- $# j)" 
+    using zminus_zdiff_eq by simp
+  then have b: "$# n $* t $+ $# j=  $- ($# (n #* zmagnitude(t)) $- $# j)" 
+    using znat_mult a by simp
+  have "0 < zmagnitude(t)" using zneg_zmag_0_lt a by simp
+  then have "j < n #* zmagnitude(t)" using mult_lt_keeps_ineqaulity a by simp
+  then have "j \<le> n #* zmagnitude(t)" using leI by simp
+  then have "$# n $* t $+ $# j=  $- ($# (n #* zmagnitude(t) #- j))" 
+    using b int_of_diff by simp
+  then show ?thesis by simp
+qed
 
 theorem zneg_mult_add:
   "\<lbrakk> n:nat; 0 < n; t:int; znegative(t); j:nat; j < n \<rbrakk>
     \<Longrightarrow> znegative($# n $* t $+ $# j)"
-
-oops
+apply(subst zneg_nt_simp, auto)
+apply(rule znegative_minus_int_of, auto)
+apply(insert diff_is_0_lemma[of "n #* zmagnitude(t)" j], auto)
+apply(insert zneg_zmag_0_lt[of t], auto)
+apply(insert mult_lt_keeps_ineqaulity[of j n "zmagnitude(t)"], auto)
+apply(drule le_imp_not_lt, auto)
+done
 
 theorem zmod_mult_self:
   "\<lbrakk> n:nat; 0 < n; t:int; j:nats(n) \<rbrakk>
