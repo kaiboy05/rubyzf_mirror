@@ -2,6 +2,8 @@ theory natext
 imports ZF.Arith ZF.ArithSimp
 begin
 
+ML_file \<open>InitRuby.ML\<close>
+
 definition nats :: "i \<Rightarrow> i" where
   "nats(n) == {m:nat. m < n}"
 
@@ -176,12 +178,16 @@ apply(drule zero_lt_lemma, auto)
 apply(induct_tac ja, auto)
 by(rule mod_diff_induct_lemma)
 
-find_theorems name: mod_type
+lemmas arith_typechecks =
+  mod_type div_type nat_typechecks
 
-declare add_0_right 
-        mult_0_right 
-        add_diff_inverse 
-        diff_add_inverse 
-        diff_add_0          [simp]
+find_theorems name: mult_succ_right
+
+lemmas arith_simps =
+  add_0_right add_succ_right mult_0_right
+  mult_succ_right diff_self_eq_0 add_diff_inverse
+  diff_add_inverse diff_add_0
+
+declare arith_typechecks arith_simps [simp]
 
 end

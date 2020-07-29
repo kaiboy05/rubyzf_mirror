@@ -506,7 +506,7 @@ theorem zdiv_geq_pos:
 apply(auto)
 done
 
-theorem zdiv_geq_neq_0:
+theorem zdiv_geq_neg_0:
   "\<lbrakk> 0 < n; m:int; n:nat; znegative(m); n \<le> zmagnitude(m);
     zmagnitude(m) mod n = 0 \<rbrakk>
     \<Longrightarrow> m $/ n = $- $# (zmagnitude(m) div n)"
@@ -852,5 +852,33 @@ apply(insert zmult_cancel[of n "($# n $* t $+ $# j) $/ n" t])
 apply(auto simp add: zmult_commute)
 apply(insert zdiv_type, auto)
 done
+
+lemmas int_typechecks =
+  zdiff_type int_typechecks
+
+lemmas numt =
+  int_typechecks arith_typechecks
+
+lemmas int_simps = 
+  zminus_zminus zmagnitude_int_of zminus_int0 
+  zmult_zminus zmult_zminus_right zmagnitude_zminus_int_of
+  zadd_int0 zadd_zminus_inverse2 zadd_int0_right
+  zmult_int1 zmult_int0 zmult_1_right zmult_0_right
+  zadd_zminus_inverse not_zneg_mag zneg_zmag zminus_diff
+
+declare int_simps int_typechecks [simp]
+
+lemmas zadd_ac =
+  zadd_assoc zadd_commute zadd_left_commute
+
+lemmas zdiv_rls =
+  int_of_add[THEN sym] znat_mult[THEN sym]
+  mod_less mod_div_equality zmult_zminus
+  zmod_less_pos zmod_less_neg zmod_pos
+  zmod_neg_0 zmod_neg_not0 zdiv_less_pos
+  zdiv_less_neg zdiv_geq_pos zdiv_geq_neg_0
+  zdiv_geq_neg_not0 nat_into_Ord not_lt_iff_le
+
+
 
 end
