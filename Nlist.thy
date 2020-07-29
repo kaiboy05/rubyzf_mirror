@@ -107,7 +107,100 @@ apply(rule PartI)
 apply(rule ConsI, simp_all)
 done
 
+theorem napp_type: 
+  "\<lbrakk> la:nlist[na]A; lb:nlist[nb]A \<rbrakk> 
+    \<Longrightarrow> napp(na, nb, la, lb):nlist[na #+ nb]A"
+apply(elim nlistE)
+apply(rename_tac as bs)
+apply(simp add: nlist_is_Part napp_def)
+apply(rule PartI)
+apply(rule listn_append, simp_all)
+done
 
+theorem nhd_type: "\<lbrakk> l:nlist[succ(n)]A \<rbrakk> \<Longrightarrow> nhd(l):A"
+apply(elim nlistE)
+apply(simp add: nhd_def)
+apply(rule hd_type, simp)
+apply(insert listn_iff[of "succ(n)"], simp)
+done
+
+theorem ntl_type: "\<lbrakk> l:nlist[n]A \<rbrakk> \<Longrightarrow> ntl(n, l):nlist[n #- 1]A"
+apply(elim nlistE)
+apply(simp add: nlist_is_Part ntl_def)
+apply(rule PartI)
+apply(subst listn_iff, auto)
+apply(subst (asm) listn_iff)
+apply(frule length_tl, simp)
+done
+
+theorem ntl_type2: "\<lbrakk> l:nlist[succ(n)]A \<rbrakk> \<Longrightarrow> ntl(succ(n), l):nlist[n]A"
+apply(frule ntl_type)
+apply(frule nlist_nat, simp)
+done
+
+
+theorem nlast_type: "\<lbrakk> l:nlist[succ(n)]A \<rbrakk> \<Longrightarrow> nlast(l):A"
+apply(elim nlistE)
+apply(simp add: nlast_def)
+apply(rule hd_type)
+apply(rule rev_type, simp)
+apply(subst length_rev, auto)
+apply(subst (asm) listn_iff, simp)
+done
+
+theorem nfront_type: "\<lbrakk> l:nlist[n]A \<rbrakk> \<Longrightarrow> nfront(n, l):nlist[n #- 1]A"
+apply(elim nlistE)
+apply(simp add: nlist_is_Part nfront_def)
+apply(rule PartI)
+apply(subst listn_iff, auto)
+apply(subst (asm) listn_iff)
+apply(insert length_front[of _ A], auto)
+done
+
+theorem nfront_type2: "\<lbrakk> l:nlist[succ(n)]A \<rbrakk> \<Longrightarrow> nfront(succ(n), l):nlist[n]A"
+apply(frule nfront_type)
+apply(frule nlist_nat, simp)
+done
+
+theorem nsnoc_type: "\<lbrakk> l:nlist[n]A; a:A \<rbrakk> \<Longrightarrow> nsnoc(n, l, a):nlist[succ(n)]A"
+apply(erule nlistE)
+apply(simp add: nlist_is_Part nsnoc_def napp_def ncons_def nnil_def)
+apply(rule PartI)
+apply(subst listn_iff, auto)
+apply(subst (asm) listn_iff, auto)
+done
+
+theorem nnil_elem: "\<lbrakk> nnil:nlist[n]A; n=0 \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+apply(simp add: nnil_def)
+apply(elim nlistE, auto)
+done
+
+theorem zero_nlist: "\<lbrakk> x:nlist[0]A; x=nnil \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+apply(elim nlistE)
+apply(simp add: nnil_def)
+apply(subst (asm) listn_iff, auto)
+done
+
+lemma cons_hd_tl: "\<lbrakk> x:list(A); 0 < length(x) \<rbrakk> \<Longrightarrow> x = Cons(hd(x), tl(x))"
+apply(case_tac x, simp+)
+done
+
+theorem succ_nlist: 
+  "\<lbrakk> x:nlist[succ(n)]A;
+    \<And>a l. \<lbrakk> a:A; l:nlist[n]A; x=ncons(n, a, l) \<rbrakk> \<Longrightarrow> P\<rbrakk> \<Longrightarrow> P"
+apply(frule nhd_type)
+apply(frule ntl_type)
+apply(frule nlist_nat, simp)
+apply(subgoal_tac "x = ncons(n, nhd(x), ntl(succ(n), x))", simp)
+apply(elim nlistE)
+apply(simp add: ncons_def nhd_def ntl_def listn_iff)
+proof -
+  fix la laa
+  assume a: "la:list(A)" "tl(la) = laa" "length(la) = succ(n)"
+  then have "0 < length(la)" by simp
+  then have "la = Cons(hd(la), tl(la))" using cons_hd_tl[of la A] a by simp
+  then show "la = Cons(hd(la), laa)" using a by simp
+qed
 
 
 

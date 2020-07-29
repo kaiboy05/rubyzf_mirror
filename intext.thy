@@ -866,7 +866,11 @@ lemmas int_simps =
   zmult_int1 zmult_int0 zmult_1_right zmult_0_right
   zadd_zminus_inverse not_zneg_mag zneg_zmag zminus_diff
 
-declare int_simps int_typechecks [simp]
+lemmas int_ss = int_simps int_typechecks
+
+declare int_ss [simp]
+
+declare nats_def[simp del]
 
 lemmas zadd_ac =
   zadd_assoc zadd_commute zadd_left_commute

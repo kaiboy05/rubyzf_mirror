@@ -154,6 +154,12 @@ proof -
   show "a = a'" using b by simp
 qed
 
+declare leI [simp del]
+declare length_type [simp del]
+declare rev_type [simp del]
+declare tl_type [simp del]
+declare front_def [simp del]
+
 lemmas list_typechecks =
   hd_type tl_type front_type list_rec_type
   map_type map_type2 app_type length_type rev_type flat_type
@@ -163,6 +169,7 @@ lemmas list_simps =
   app_Nil app_Cons drop_0 drop_Nil drop_succ_Cons
   front_Cons1 front_Nil front_Cons2 front_Cons3
 
-declare list_typechecks list_simps [simp]
+lemmas list_ss = list_typechecks list_simps
+declare list_ss [simp]
 
 end

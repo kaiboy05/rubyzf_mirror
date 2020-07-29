@@ -181,13 +181,13 @@ by(rule mod_diff_induct_lemma)
 lemmas arith_typechecks =
   mod_type div_type nat_typechecks
 
-find_theorems name: mult_succ_right
-
 lemmas arith_simps =
   add_0_right add_succ_right mult_0_right
   mult_succ_right diff_self_eq_0 add_diff_inverse
   diff_add_inverse diff_add_0
 
-declare arith_typechecks arith_simps [simp]
+lemmas arith_ss = arith_typechecks arith_simps
+
+declare arith_ss [simp]
 
 end
