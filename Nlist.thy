@@ -202,7 +202,119 @@ proof -
   then show "la = Cons(hd(la), laa)" using a by simp
 qed
 
+lemma hd_length_gt_0: "x:list(A) \<Longrightarrow> 0 < length([hd(x)])"
+apply(auto)
+done
 
+lemma app_front_last: "\<lbrakk> x:list(A)\<rbrakk> \<Longrightarrow> (x = [] \<longrightarrow> True) & (x \<noteq> [] \<longrightarrow> x = front(x) @ [hd(rev(x))])"
+apply(erule list_append_induct, auto)
+apply(frule rev_type)
+apply(case_tac y, auto)
+apply(subst app_Cons[THEN sym])
+apply(rule front_app_end[THEN sym], auto)
+apply(subst rev_app_distrib, auto)
+done
+
+theorem succ_nlist_app: 
+  "\<lbrakk> x:nlist[succ(n)]A; 
+    \<And> a l. \<lbrakk> a:A; l:nlist[n]A; x = nsnoc(n, l, a) \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+apply(frule nfront_type)
+apply(frule nlast_type)
+apply(frule nlist_nat, simp)
+apply(subgoal_tac "x = nsnoc(n, nfront(succ(n), x), nlast(x))", simp)
+apply(elim nlistE)
+apply(simp add: nsnoc_def ncons_def napp_def nlast_def nnil_def nfront_def)
+proof -
+  fix la laa
+  assume a: "la:list(A)" "front(la) = laa" "\<langle>succ(n), la\<rangle> : listn(A)"
+  then have "length(la) = succ(n)" using listn_iff by simp
+  then have "la ~= []" using a by(auto)
+  then have "la = front(la) @ [hd(rev(la))]" using app_front_last[of la A] a by simp
+  then show "la = laa @ [hd(rev(la))]" using a by simp
+qed
+
+theorem ncons_iff: 
+  "\<lbrakk> l:nlist[n]A; l':nlist[n]B \<rbrakk> 
+    \<Longrightarrow> (ncons(n, a, l) = ncons(n, a', l') \<longleftrightarrow> (l = l' & a = a'))"
+apply(elim nlistE)
+apply(simp add: ncons_def, auto)
+done
+
+theorem ncons_inject: 
+  "\<lbrakk> ncons(n, a, l) = ncons(n, a', l'); l:nlist[n]A; l':nlist[n]B;
+    \<lbrakk> l = l'; a = a' \<rbrakk> \<Longrightarrow> R \<rbrakk> \<Longrightarrow> R"
+apply(frule ncons_iff[of l n A "l'" B], auto)
+done
+
+lemma ncons_n_iff_lemma: "\<lbrakk>l \<in> nlist[n]A; l' \<in> nlist[n']B; ncons(n, a, l) = ncons(n', a', l')\<rbrakk> \<Longrightarrow> n = n'"
+apply(elim nlistE)
+apply(simp add: ncons_def)
+done
+
+theorem ncons_iff2:
+  "\<lbrakk> l:nlist[n]A; l':nlist[n']B \<rbrakk> \<Longrightarrow> (ncons(n, a, l) = ncons(n', a', l')) \<longleftrightarrow> (l = l' & a = a' & n = n')"
+apply(auto)
+apply(frule ncons_n_iff_lemma[of l n A "l'" "n'" B], auto)
+apply(insert ncons_iff, auto)
+apply(frule ncons_n_iff_lemma[of l n A "l'" "n'" B], auto)
+apply(insert ncons_iff, auto)
+apply(rule ncons_n_iff_lemma, auto)
+done
+
+theorem ncons_inject2: 
+  "\<lbrakk> ncons(n, a, l) = ncons(n', a', l'); l:nlist[n]A; l':nlist[n']B; 
+    \<lbrakk> l = l'; a = a'; n = n' \<rbrakk> \<Longrightarrow> R \<rbrakk> \<Longrightarrow> R"
+apply(frule ncons_iff2[of l n A "l'" "n'" B], auto)
+done
+
+theorem ncons_inj1: "\<lbrakk> ncons(n, a, l) = ncons(n, a', l') \<rbrakk> \<Longrightarrow> a = a'"
+apply(simp add: ncons_def)
+done
+
+theorem ncons_inj2: "\<lbrakk> ncons(n, a, l) = ncons(n, a', l'); l:nlist[n]A; l':nlist[n]B \<rbrakk> \<Longrightarrow> l = l'"
+apply(frule ncons_iff2[of l n A "l'" "n" B], auto)
+done
+
+theorem nsnoc_inject: 
+  "\<lbrakk> nsnoc(n, l, a) = nsnoc(n, l', a'); a:A; a':B; l:nlist[n]C; l':nlist[n]E;
+    \<lbrakk> l = l'; a = a' \<rbrakk> \<Longrightarrow> R \<rbrakk> \<Longrightarrow> R"
+apply(simp add: nsnoc_def napp_def)
+apply(elim nlistE, simp add: ncons_def nnil_def)
+proof -
+  fix la laa
+  assume a: "la @ [a] = laa @ [a']" "la:list(C)" "laa:list(E)" "a:A" "a':B"
+      and b: "\<lbrakk>la = laa; a = a'\<rbrakk> \<Longrightarrow> R"
+  then have "rev(la @ [a]) = rev(laa @ [a'])" by simp
+  then have "la = laa & a = a'" using rev_app_end[of la C laa E a A "a'" B] a by simp
+  then show R using b by simp
+qed
+
+theorem nsnoc_iff: 
+  "\<lbrakk> l:nlist[n]A; l':nlist[n]B; a:C; a':E \<rbrakk> \<Longrightarrow>
+    (nsnoc(n, l, a) = nsnoc(n, l', a')) \<longleftrightarrow> (l = l' & a = a')"
+apply(auto)
+apply(erule nsnoc_inject, auto)
+apply(erule nsnoc_inject, auto)
+done
+
+theorem nhd_ncons: "l:nlist[n]A \<Longrightarrow> nhd(ncons(n, a, l)) = a"
+apply(elim nlistE)
+apply(simp add: nhd_def ncons_def)
+done
+
+theorem ntl_nnil: "ntl(0, nnil) = nnil"
+apply(simp add: ntl_def nnil_def)
+done
+
+theorem ntl_ncons: "\<lbrakk> l:nlist[n]A \<rbrakk> \<Longrightarrow> ntl(succ(n), ncons(n, a, l)) = l"
+apply(elim nlistE)
+apply(simp add: ntl_def ncons_def)
+done
+
+
+
+
+find_theorems name: app iff
 
 end
 
