@@ -1,4 +1,4 @@
-theory listext
+theory ListExt
 imports ZF.List 
 begin
 

@@ -1,4 +1,4 @@
-theory intext
+theory IntExt
 imports ZF.Int natext
 begin
 

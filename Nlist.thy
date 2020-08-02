@@ -1,5 +1,5 @@
 theory Nlist
-imports "ZF-Induct.ListN" listext natext
+imports "ZF-Induct.ListN" ListExt NatExt
 begin
 
 definition nlist :: "[i, i] \<Rightarrow> i" ("(nlist[_]/_)" [0, 1000] 85)

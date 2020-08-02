@@ -1,4 +1,4 @@
-theory natext
+theory NatExt
 imports ZF.Arith ZF.ArithSimp
 begin
 

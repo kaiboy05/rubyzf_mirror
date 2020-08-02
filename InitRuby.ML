@@ -19,7 +19,9 @@ val test_assume_tac =
 
 (*  Type checking solves a:?A (a rigid, ?A maybe flexible).
     match_tac is too strict; would refuse to instantiate ?A *)
+
 (*
+
 fun typechk_step_tac tyrls =
   FIRSTGOAL (test_assume_tac ORELSE' filt_resolve_tac tyrls 4);
 
