@@ -1,5 +1,5 @@
 theory IntExt
-imports ZF.Int natext
+imports ZF.Int NatExt
 begin
 
 definition zmod :: "[i,i] \<Rightarrow> i" (infixl "$'/'/" 69)
