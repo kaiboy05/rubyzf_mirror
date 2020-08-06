@@ -19,15 +19,15 @@ val test_assume_tac =
 
 (*  Type checking solves a:?A (a rigid, ?A maybe flexible).
     match_tac is too strict; would refuse to instantiate ?A *)
-
 (*
-
-fun typechk_step_tac tyrls =
+fun typechk_step_tac tyrls = 
   FIRSTGOAL (test_assume_tac ORELSE' filt_resolve_tac tyrls 4);
+
 
 fun typechk_tac tyrls = REPEAT (typechk_step_tac tyrls);
 
-val basictypeinfo = ref([]:thm list);
+
+val basictypeinfo = Unsynchronized.ref([]:thm list);
 
 fun addT typelist = (basictypeinfo := (typelist @(!basictypeinfo)));
 
@@ -37,13 +37,13 @@ addT ZF_typechecks;
 
 fun typegoal trls = (type_auto_tac trls (!basictypeinfo));
 
+
+
 fun typchk trls tac = 
   tac THEN
   (typechk_tac (trls @ (!basictypeinfo)));
 
-fun typchk trls tac =
-  tac  THEN
-  (typechk_tac (trls @ (!basictypeinfo)));
+
 
 fun resolve_tac_c trls thl i = (typchk trls (resolve_tac thl i));
 
@@ -62,12 +62,11 @@ fun REPEAT_n n tac =
   else
     ((REPEAT_n (n-1) tac) THEN tac);
 
-fun unfold_once rl i =
+fun unfold_once ctxt rl i =
   SELECT_GOAL (EVERY 
-    [ rewrite_goals_tac [r1],
+    [ rewrite_goals_tac ctxt [rl],
       asm_full_simp_tac (ZF_ss addsimps [rec_succ]) i,
       fold_goals_tac [rl]]) 1;
-
 (* ----------------------------------------*)
 (*      Extensions to simplification sets  *)
 (* ----------------------------------------*)
