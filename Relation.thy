@@ -141,7 +141,6 @@ apply(frule domain_rel_subset)
 apply(drule Union_mono) back
 apply(drule range_sub) back
 apply(insert range_Union[of "A*B"], drule subset_trans, simp)
-apply(drule domain_sub) back back
 apply(blast)
 done
 
@@ -152,7 +151,6 @@ apply(frule domain_rel_subset)
 apply(drule Union_mono) back
 apply(drule range_sub) back
 apply(insert range_Union[of "A*B"], drule subset_trans, simp)
-apply(drule range_sub) back back
 apply(blast)
 done
 
@@ -163,7 +161,6 @@ apply(frule range_rel_subset)
 apply(drule Union_mono) back
 apply(drule range_sub) back
 apply(insert range_Union[of "C*E"], drule subset_trans, simp)
-apply(drule range_sub) back back
 apply(blast)
 done
 
@@ -174,49 +171,113 @@ apply(frule range_rel_subset)
 apply(drule Union_mono) back
 apply(drule range_sub) back
 apply(insert range_Union[of "C*E"], drule subset_trans, simp)
-apply(drule domain_sub) back back
 apply(blast)
 done
 
-lemma "a:sig(A) \<Longrightarrow> a:domain(range(\<lambda>t\<in>time. <a`t, b(t)>))"
-oops
+lemma spair_type_weak: "<a#b>:sig({<a`t, b`t>. t:time})"
+apply(auto simp add: spair_def)
+apply(rule lam_funtype)
+done
 
 theorem ddtyp_sig: "\<lbrakk> x:sig(A); <<x#x2>, y>:R \<rbrakk> \<Longrightarrow> x:sig(ddtyp(R))"
-apply(simp add: ddtyp_def dtyp_def spair_def)
+apply(simp add: ddtyp_def)
 apply(rule sig_sub_func, simp)
-oops
-
-thm apply_rangeI
-
-find_theorems range
-find_theorems "_:_" "_\<subseteq>_"
-find_theorems "_\<Longrightarrow>_:Sigma(_,_)"
+apply(insert spair_type_weak[of x x2])
+apply(frule dtyp_sig, auto simp add: spair_def)
+apply(drule apply_funtype, simp) back back
+apply(auto)
+done
 
 theorem rdtyp_sig: "\<lbrakk> x:sig(A); <<x1#x>, y>:R \<rbrakk> \<Longrightarrow> x:sig(rdtyp(R))"
-oops
+apply(simp add: rdtyp_def)
+apply(rule sig_sub_func, simp)
+apply(insert spair_type_weak[of x1 x])
+apply(frule dtyp_sig, auto simp add: spair_def)
+apply(drule apply_funtype, simp) back back
+apply(auto)
+done
 
-theorem rrtyp_sig: "\<lbrakk> x:sig(A); <x, <y1#y>>:R \<rbrakk> \<Longrightarrow> y:sig(rrtyp(R))"
-oops
+theorem rrtyp_sig: "\<lbrakk> y:sig(A); <x, <y1#y>>:R \<rbrakk> \<Longrightarrow> y:sig(rrtyp(R))"
+apply(simp add: rrtyp_def)
+apply(rule sig_sub_func, simp)
+apply(insert spair_type_weak[of y1 y])
+apply(frule rtyp_sig, auto simp add: spair_def)
+apply(drule apply_funtype, simp) back back
+apply(auto)
+done
 
-theorem drtyp_sig: "\<lbrakk> x:sig(A); <x, <y#y2>>:R \<rbrakk> \<Longrightarrow> y:sig(drtyp(R))"
-oops
+theorem drtyp_sig: "\<lbrakk> y:sig(A); <x, <y#y2>>:R \<rbrakk> \<Longrightarrow> y:sig(drtyp(R))"
+apply(simp add: drtyp_def)
+apply(rule sig_sub_func, simp)
+apply(insert spair_type_weak[of y y2])
+apply(frule rtyp_sig, auto simp add: spair_def)
+apply(drule apply_funtype, simp) back back
+apply(auto)
+done
 
 theorem dddtyp_rel: "\<lbrakk> x:sig(domain(ddtyp(R))); R:(A*A1)*B<~>C*E \<rbrakk> \<Longrightarrow> x:sig(A)"
-oops
+apply(rule sig_sub_func, simp)
+apply(drule apply_funtype, (simp add: ddtyp_def dtyp_def)+)
+apply(frule domain_rel_subset)
+apply(drule Union_mono) back
+apply(drule range_sub) back
+apply(insert range_Union[of "(A*A1)*B"], drule subset_trans, simp)
+apply(blast)
+done
 
 theorem rddtyp_rel: "\<lbrakk> x:sig(range(ddtyp(R))); R:(A1*A)*B<~>C*E \<rbrakk> \<Longrightarrow> x:sig(A)"
-oops
+apply(rule sig_sub_func, simp)
+apply(drule apply_funtype, (simp add: ddtyp_def dtyp_def)+)
+apply(frule domain_rel_subset)
+apply(drule Union_mono) back
+apply(drule range_sub) back
+apply(insert range_Union[of "(A1*A)*B"], drule subset_trans, simp)
+apply(blast)
+done
 
-theorem drrtyp_rel: "\<lbrakk> x:sig(range(ddtyp(R))); R:A*B<~>C*(E*E1) \<rbrakk> \<Longrightarrow> x:sig(E)"
-oops
+theorem drrtyp_rel: "\<lbrakk> x:sig(domain(rrtyp(R))); R:A*B<~>C*(E*E1) \<rbrakk> \<Longrightarrow> x:sig(E)"
+apply(rule sig_sub_func, simp)
+apply(drule apply_funtype, (simp add: rrtyp_def rtyp_def)+)
+apply(frule range_rel_subset)
+apply(drule Union_mono) back
+apply(drule range_sub) back
+apply(insert range_Union[of "C*(E*E1)"], drule subset_trans, simp)
+apply(blast)
+done
 
 theorem dddtyp_sig: "\<lbrakk> x:sig(A); <<<x#x2>#x3>, y>:R \<rbrakk> \<Longrightarrow> x:sig(domain(ddtyp(R)))"
-oops
+apply(simp add: ddtyp_def)
+apply(rule sig_sub_func, simp)
+apply(insert spair_type_weak[of "<x#x2>" x3])
+apply(frule dtyp_sig, auto simp add: spair_def)
+apply(drule apply_funtype, simp) back back
+apply(auto)
+done
 
 theorem drrtyp_sig: "\<lbrakk> x:sig(A); <y, <x1#<x#x3>>>:R \<rbrakk> \<Longrightarrow> x:sig(domain(rrtyp(R)))"
-oops
+apply(simp add: rrtyp_def)
+apply(rule sig_sub_func, simp)
+apply(insert spair_type_weak[of "x1" "<x#x3>"])
+apply(frule rtyp_sig, auto simp add: spair_def)
+apply(drule apply_funtype, simp) back back
+apply(auto)
+done
 
-theorem drrtyp_sig: "\<lbrakk> x:sig(A); <<<x1#x>#x3>, y>:R \<rbrakk> \<Longrightarrow> x:sig(range(ddtyp(R)))"
-oops
+theorem rddtyp_sig: "\<lbrakk> x:sig(A); <<<x1#x>#x3>, y>:R \<rbrakk> \<Longrightarrow> x:sig(range(ddtyp(R)))"
+apply(simp add: ddtyp_def)
+apply(rule sig_sub_func, simp)
+apply(insert spair_type_weak[of "<x1#x>" x3])
+apply(frule dtyp_sig, auto simp add: spair_def)
+apply(drule apply_funtype, simp) back back
+apply(auto)
+done
+
+lemmas typ_sigs = 
+  rrtyp_sig ddtyp_sig drtyp_sig rdtyp_sig
+  dddtyp_sig drrtyp_sig rddtyp_sig
+
+lemmas typ_rels =
+  rrtyp_rel ddtyp_rel drtyp_rel rdtyp_rel
+  dddtyp_rel rddtyp_rel drrtyp_rel
   
 end
