@@ -13,7 +13,7 @@ translations
   "time"=> "CONST int"
 
 syntax
-  "sig" :: "i \<Rightarrow> i"        ("(sig'(_'))" [70] 70)
+  "sig" :: "i \<Rightarrow> i"        ("(sig'(_'))" [75] 75)
 translations
   "sig(A)" \<rightleftharpoons> "CONST int \<rightarrow> A"
 
