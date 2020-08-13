@@ -148,12 +148,42 @@ apply(rule parI, simp_all)
 apply(rule parI, simp_all)
 done
 
+theorem spread_comp_lem: "\<lbrakk> R:A1<~>B1; S:A2<~>B2; T:B1<~>C1; W:B2<~>C2 \<rbrakk> 
+                          \<Longrightarrow> [[R,S]] ;; [[T,W]] = [[(R ;; T), (S ;; W)]]"
+apply(rule par_comp_dist, simp_all)
+done
 
-
-
-find_theorems "_:_" "_\<subseteq>_"
-find_theorems name: SigmaE
-find_theorems "_:domain(_)"
-find_theorems "_:_*_" "_:_"
+theorem spread_comp: "\<lbrakk> f:A~B; g:B~C \<rbrakk> \<Longrightarrow> spread(f);;spread(g) = spread(f ;; g)"
+apply(rule, rule)
+apply(frule comp_type, simp)
+apply(drule spread_type)
+apply(drule spread_type)
+apply(frule comp_type, simp) back
+apply(frule rev_subsetD, simp)
+apply(erule SigmaE, simp)
+apply(rule spreadI, simp_all)
+apply(erule compE, simp_all)
+apply(elim spreadE)
+apply(rule, rule compI, auto)
+apply(drule PowI)
+apply(drule PowI)
+apply(frule comp_type, simp)
+apply(frule spread_type) back back
+apply(frule rev_subsetD, simp)
+apply(erule SigmaE, simp)
+apply(erule spreadE)
+apply(subgoal_tac "\<forall>t\<in>int. EX z:B. (\<langle>xa ` t, z\<rangle> \<in> f & <z, y`t> : g)")
+apply(subst (asm) skolem_intro[of int B])
+apply(erule bexE)
+apply(subst (asm) ball_conj_distrib[of int])
+apply(erule conjE)
+apply(rule compI)
+apply(rule spreadI, blast)
+apply(auto)
+apply(rule spreadI, simp_all)
+apply(frule rev_bspec[of _ int "%x. _ : f;;g"], blast)
+apply(erule compE, simp_all)
+apply(blast)
+done
 
 end
