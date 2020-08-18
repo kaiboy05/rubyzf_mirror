@@ -371,12 +371,68 @@ apply(subgoal_tac "x = snil & y = snil", simp, rule conjI)
 apply((simp add: snil_def, rule fun_extension, simp+)+)
 done
 
+theorem apl_type: "apl(A,n):A*nlist[n]A<~>nlist[succ(n)]A"
+apply(unfold apl_def, rule spread_type, blast)
+done
 
+theorem aplR: "A:ChTy \<Longrightarrow> apl(A,n):A*nlist[n]A<R>nlist[succ(n)]A"
+apply(unfold apl_def, rule spreadR)
+apply(((intro prod_in_chty nlist_in_chty)?, simp)+)
+apply(blast)
+done
 
+theorem aplI: "\<lbrakk> a:sig(A); l:sig(nlist[n]A) \<rbrakk> \<Longrightarrow> <<a#l>, [a@>l|n]>:apl(A,n)"
+apply(unfold apl_def scons_def)
+apply(rule spreadI, rule+)
+apply((intro sig_apply_time spair_type, simp+)+)
+apply((subst spair_apply_time, simp)+, simp)
+apply(blast+)
+apply((intro sig_apply_time spair_type, simp+)+)
+apply(insert scons_type, simp add: scons_def)
+done
 
+theorem aplE: 
+  "\<lbrakk> <<a#la>,[b@>lb|n]>:apl(A,n);
+    a:sig(A1); b:sig(A2); la:sig(nlist[n]A3); lb:sig(nlist[n]A4);
+    \<lbrakk> a=b; la=lb \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+apply(unfold apl_def scons_def, erule spreadE)
+apply(subgoal_tac "a=b & la=lb", simp, intro conjI)
+apply((rule fun_extension, simp+,
+      drule bspec, simp, 
+      (subst (asm) spair_apply_time, simp)+, simp,
+      elim conjE ncons_inject, simp+)+)
+done
 
+theorem apr_type: "apr(A,n):nlist[n]A*A<~>nlist[succ(n)]A"
+apply(unfold apr_def, rule spread_type, blast)
+done
 
-find_theorems snil
+theorem aprR: "A:ChTy \<Longrightarrow> apr(A,n):nlist[n]A*A<R>nlist[succ(n)]A"
+apply(unfold apr_def, rule spreadR)
+apply(((intro prod_in_chty nlist_in_chty)?, simp)+)
+apply(blast)
+done
 
+theorem aprI: "\<lbrakk> a:sig(A); l:sig(nlist[n]A) \<rbrakk> \<Longrightarrow> <<l#a>, [l<@a|n]>:apr(A,n)"
+apply(unfold apr_def ssnoc_def)
+apply(rule spreadI, rule+)
+apply((intro sig_apply_time spair_type, simp+)+)
+apply((subst spair_apply_time, simp)+, simp)
+apply(blast+)
+apply((intro sig_apply_time spair_type, simp+)+)
+apply(insert ssnoc_type2, simp add: ssnoc_def)
+done
+
+theorem aprE: 
+  "\<lbrakk> <<la#a>,[lb<@b|n]>:apr(A,n);
+    a:sig(A1); b:sig(A2); la:sig(nlist[n]A3); lb:sig(nlist[n]A4);
+    \<lbrakk> a=b; la=lb \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+apply(unfold apr_def ssnoc_def, erule spreadE)
+apply(subgoal_tac "a=b & la=lb", simp, intro conjI)
+apply((rule fun_extension, simp+,
+      drule bspec, simp, 
+      (subst (asm) spair_apply_time, simp)+, simp,
+      elim conjE nsnoc_inject, simp+)+)
+done
 
 end

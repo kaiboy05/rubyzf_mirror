@@ -47,6 +47,10 @@ definition pri :: "i \<Rightarrow> i" where
 definition sec :: "i \<Rightarrow> i" where
   "sec(a) == (lam t:time. snd(a`t))"
 
+lemma add_time_const: "\<lbrakk> \<And>x. x:time \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+apply(auto)
+done
+
 theorem sig_mono: "\<lbrakk> A \<subseteq> B \<rbrakk> \<Longrightarrow> sig(A) \<subseteq> sig(B)"
 apply(drule Pi_mono)
 apply(simp)
@@ -119,6 +123,13 @@ apply(subgoal_tac "{nsnoc(n, l ` t, a ` t) . t \<in> time} \<subseteq> nlist[suc
 apply(drule sig_mono, drule subsetD, simp+)
 apply(rule RepFun_subset, simp)
 apply(rule lam_funtype)
+done
+
+theorem ssnoc_type2: "\<lbrakk> a:sig(A); l:sig(nlist[n]A) \<rbrakk> \<Longrightarrow> [l <@ a|n]:sig(nlist[succ(n)]A)"
+apply(rule ssnoc_type, simp_all)
+apply(rule add_time_const)
+apply(drule apply_funtype, simp) back
+apply(erule nlist_nat)
 done
 
 theorem ssnoc_is_app: "[l <@ a|n] = sapp(n, 1, l, [a @> snil|0])"
@@ -212,10 +223,6 @@ theorem scons_inject:
   "\<lbrakk> ([a @> la |n] = [b @> lb |n]); a:sig(A); b:sig(B); la:sig(nlist[n]C); lb:sig(nlist[n]E); 
     \<lbrakk>la = lb; a = b\<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
 apply(insert scons_iff, simp)
-done
-
-lemma add_time_const: "\<lbrakk> \<And>x. x:time \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
-apply(auto)
 done
 
 theorem scons_iff2: 
@@ -357,7 +364,7 @@ lemmas signalE =
   sig_nlist0E sig_ssnocE succ_nlist zero_nlist 
   ncons_inject nsnoc_inject
 lemmas signal_types =
-  spair_type scons_type snil_type sapp_type ssnoc_type
+  spair_type scons_type snil_type sapp_type ssnoc_type2
 
 lemmas Ruby_type = signal_types Ruby_type
 
