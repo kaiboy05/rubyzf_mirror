@@ -447,6 +447,63 @@ apply(erule conjE)
 apply(rule belowI, simp_all)
 done
 
+theorem beside_type: 
+  "\<lbrakk> R:A*B<~>C*De; S:De*E<~>F*G \<rbrakk> \<Longrightarrow> R <~~> S:A*B*E<~>(C*F)*G"
+apply(unfold beside_def)
+apply(typecheck add: inv_type below_type)
+done
+
+theorem beside_type2:
+  "\<lbrakk> R:A*B<~>C*De; S:H*E<~>F*G \<rbrakk> \<Longrightarrow> R <~~> S:A*B*E<~>(C*F)*G"
+apply(unfold beside_def)
+apply(typecheck add: inv_type below_type2)
+done
+
+theorem besideR:
+  "\<lbrakk> A:ChTy; B:ChTy; C:ChTy; De:ChTy; E:ChTy; E:ChTy; F:ChTy; G:ChTy;
+    R:A*B<R>C*De; S:De*E<R>F*G \<rbrakk> \<Longrightarrow> R<~~>S:A*B*E<R>(C*F)*G"
+apply(unfold beside_def)
+apply(intro invR belowR, simp_all)
+done
+
+theorem besideI:
+  "\<lbrakk> d:sig(De); a:sig(A); b:sig(B); c:sig(C); e:sig(E); f:sig(F); g:sig(G);
+    <<a#b>,<c#d>>:R; <<d#e>,<f#g>>:S \<rbrakk> \<Longrightarrow> <<a#<b#e>>,<<c#f>#g>>:R<~~>S"
+apply(unfold beside_def)
+apply(intro invI belowI, simp_all)
+done
+
+theorem besideE:
+  "\<lbrakk> <<a#<b#e>>, <<c#f>#g>>:R<~~>S;
+    \<And>d. \<lbrakk> <<a#b>,<c#d>>:R; <<d#e>,<f#g>>:S; d:sig(De) \<rbrakk> \<Longrightarrow> P;
+    R:A*B<~>C*De; S:De*E<~>F*G;
+    a:sig(A'); b:sig(B'); c:sig(C'); e:sig(E'); f:sig(F'); g:sig(G') \<rbrakk> \<Longrightarrow> P"
+apply(unfold beside_def)
+apply(elim invE belowE, typecheck add: below_type inv_type, simp)
+done
+
+theorem besideE2:
+  "\<lbrakk> <<a#<b#e>>, <<c#f>#g>>:R<~~>S;
+    \<And>d. \<lbrakk> <<a#b>,<c#d>>:R; <<d#e>,<f#g>>:S; d:sig(De) \<rbrakk> \<Longrightarrow> P;
+    R:A*B<~>C*De; S:H*E<~>F*G;
+    a:sig(A'); b:sig(B'); c:sig(C'); e:sig(E'); f:sig(F'); g:sig(G') \<rbrakk> \<Longrightarrow> P"
+apply(unfold beside_def)
+apply(elim invE belowE2, typecheck add: below_type2 inv_type, simp)
+done
+
+theorem beside_iff:
+  "\<lbrakk> a:sig(A); b:sig(B); c:sig(C); e:sig(E); f:sig(F); g:sig(G);
+    R:A*B<~>C*De; S:De*E<~>F*G \<rbrakk> \<Longrightarrow>
+    <<a#<b#e>>,<<c#f>#g>>:R<~~>S \<longleftrightarrow> 
+    (EX d:sig(De). <<a#b>, <c#d>>:R & <<d#e>, <f#g>>:S)"
+apply(rule)
+apply(unfold beside_def)
+apply(elim invE belowE, typecheck add: inv_type below_type, blast)
+apply(erule bexE, rotate_tac 8)
+apply(intro invI belowI, simp_all)
+done
+
+
 find_theorems "_\<rightarrow>_ \<subseteq> _\<rightarrow>_"
 find_theorems name: spair
 find_theorems name: bex
