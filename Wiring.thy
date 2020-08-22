@@ -435,4 +435,27 @@ apply((rule fun_extension, simp+,
       elim conjE nsnoc_inject, simp+)+)
 done
 
+lemmas Ruby_type = Ruby_type
+  reorg_type cross_type Id_type
+  lwir_type rwir_type p1_type p2_type
+  dub_type pzip_type NNIL_type
+  apl_type apr_type
+
+lemmas RubyR = RubyR
+  reorgR crossR IdR lwirR rwirR
+  p1R p2R dubR pzipR NNILR
+  aplR aprR
+
+lemmas RubyI = RubyI
+  reorgI crossI IdI lwirI rwirI
+  p1I p2I dubI pzipI NNILI
+  aplI aprI
+
+lemmas RubyE = RubyE
+  reorgE crossE IdE lwirE rwirE
+  p1E p2E dubE pzipE NNILE
+  aplE aprE
+
+declare Ruby_type [TC]
+
 end

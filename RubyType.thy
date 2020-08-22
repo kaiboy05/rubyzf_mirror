@@ -57,7 +57,7 @@ apply(frule pure_rel) back back
 apply(simp)
 done
 
-theorem "A<R>B \<subseteq> A<~>B"
+theorem ruby_sub_sig: "A<R>B \<subseteq> A<~>B"
 apply(auto simp add: rrel_def)
 done
 
@@ -94,5 +94,11 @@ theorem rrelD2: "R:A<R>B \<Longrightarrow> B:ChTy"
 apply(auto simp add: rrel_def)
 apply(insert dom_subset, auto)
 done
+
+lemmas RubyR =
+  spreadR delayR compR parR
+
+lemmas Ruby_ch =
+  Ruby_ch rrelD1 rrelD2
 
 end

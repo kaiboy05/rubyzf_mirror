@@ -367,5 +367,6 @@ lemmas signal_types =
   spair_type scons_type snil_type sapp_type ssnoc_type2
 
 lemmas Ruby_type = signal_types Ruby_type
+lemmas RubyE = signalE
 
 end

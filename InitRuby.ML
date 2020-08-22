@@ -2,7 +2,7 @@
 (*      Type Checking Tactics              *)
 (* ----------------------------------------*)
 (* Extended to solve n < j *)
-
+(*
 fun is_rigid_elem (Const("Trueprop", _) $ (Const("op :", _) $ a $ _))
   = not(is_Var (head_of a)) |
     is_rigid_elem (Const("Trueprop", _) $ (Const("op <", _) $ a $ b))
@@ -10,22 +10,21 @@ fun is_rigid_elem (Const("Trueprop", _) $ (Const("op :", _) $ a $ _))
     is_rigid_elem _ = false;
 
 (* Try solving a:A by assumption provided a is rigid! *)
-val test_assume_tac = 
+fun test_assume_tac ctxt = 
   SUBGOAL(fn (prem, i) =>
     if is_rigid_elem (Logic.strip_assums_concl prem)
-    then eq_assume_tac i
-    else no_tac
+    then assume_tac ctxt i
+    else eq_assume_tac i
   );
 
 (*  Type checking solves a:?A (a rigid, ?A maybe flexible).
     match_tac is too strict; would refuse to instantiate ?A *)
-(*
-fun typechk_step_tac tyrls = 
-  FIRSTGOAL (test_assume_tac ORELSE' filt_resolve_tac tyrls 4);
+
+fun typechk_step_tac ctxt tyrls = 
+  FIRSTGOAL (test_assume_tac ctxt ORELSE' resolve_tac tyrls 4);
 
 
 fun typechk_tac tyrls = REPEAT (typechk_step_tac tyrls);
-
 
 val basictypeinfo = Unsynchronized.ref([]:thm list);
 

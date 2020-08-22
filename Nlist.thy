@@ -568,7 +568,7 @@ lemmas nlist_types =
   ntl_type2 ntl_type nlast_type nfront_type2 nfront_type
 
 lemmas Ruby_type =
-  nlist_types arith_typechecks
+  nlist_types
 
 lemmas nlist_simps =
   nhd_ncons ntl_nnil ntl_ncons napp_nnil napp_ncons

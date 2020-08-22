@@ -63,6 +63,14 @@ theorem parE: "\<lbrakk> <<x1#x2>, <y1#y2>>:[[R, S]]; x1:sig(A); x2:sig(B); y1:s
 apply(auto simp add: par_def signal_simps)
 done
 
+theorem parE2: 
+  "\<lbrakk> <x,y>:[[R,S]]; x:sig(A*B); y:sig(C*E); 
+   \<And>x1 y1 x2 y2. \<lbrakk> <x1, y1>:R; <x2, y2>:S; x1:sig(A); x2:sig(B); y1:sig(C); y2:sig(E) \<rbrakk> \<Longrightarrow> P \<rbrakk> 
+  \<Longrightarrow> P"
+apply(elim sig_pairE, simp)
+apply(erule parE, simp_all)
+done
+
 theorem delay_type: "D(A): A<~>A"
 apply(auto simp add: delay_def)
 done
@@ -185,5 +193,18 @@ apply(frule rev_bspec[of _ int "%x. _ : f;;g"], blast)
 apply(erule compE, simp_all)
 apply(blast)
 done
+
+lemmas Ruby_type = 
+  Ruby_type comp_type comp_type2
+  par_type delay_type spread_type
+
+lemmas RubyI =
+  compI parI delayI spreadI
+
+lemmas RubyE = RubyE
+  compE compE2 parE parE2 delayE spreadE
+
+lemmas Ruby_ch =
+  D_chel_rel spread_chel_rel par_chel_rel
 
 end
