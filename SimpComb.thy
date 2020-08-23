@@ -152,7 +152,7 @@ apply(unfold Conj_def)
 apply(typecheck add: inv_type)
 done
 
-theorem conjR: "\<lbrakk> R:A<R>A; S:B<R>A \<rbrakk> \<Longrightarrow> Conj(R,S):B<R>B"
+theorem ConjR: "\<lbrakk> R:A<R>A; S:B<R>A \<rbrakk> \<Longrightarrow> Conj(R,S):B<R>B"
 apply(unfold Conj_def)
 apply(intro RubyR invR, simp_all)
 done
@@ -503,19 +503,278 @@ apply(erule bexE, rotate_tac 8)
 apply(intro invI belowI, simp_all)
 done
 
+lemma loop2_loop2'_iff_typ_rel: 
+  "\<lbrakk> R:A*B<~>C*B; loop2(R):ddtyp(R)<~>drtyp(R); x:loop2(R) \<rbrakk> \<Longrightarrow> x:loop2'(A,B,C,R)"
+apply(auto, drule subsetD, simp, safe)
+apply(unfold loop2_def loop2'_def)
+apply(elim compE2, typecheck add: inv_type Fst_type, simp_all)
+apply(thin_tac "yb \<in> sig((C \<times> B) \<times> rdtyp(R))", thin_tac "yc \<in> sig((A \<times> B) \<times> rdtyp(R))")
+apply(elim invE FstE, typecheck)
+apply(elim sig_pairE, simp)
+apply(elim reorgE, simp_all, elim lwirE, simp_all)
+apply(elim parE, simp_all, elim IdE, simp)
+apply(intro compI)
+apply(subgoal_tac "<ac, <ac#<bd#bd>>>:lwir(A,B)", simp)
+apply(rule lwirI, (elim typ_rels, simp)+)
+apply(rule invI, subgoal_tac "<<<ac#bd>#bd>, <ac#<bd#bd>>>:reorg(A,B,B)", simp)
+apply(rule reorgI, (elim typ_rels, simp)+, simp_all)
+apply(subgoal_tac "\<langle><<ac#bd>#bd>,<<a#bd>#bd>\<rangle> \<in> Fst(B, R)", simp)
+apply(rule FstI, rule parI, simp_all, rule IdI, (elim typ_rels, simp)+)
+apply(subgoal_tac "\<langle><<a#bd>#bd>,<a#<bd#bd>>\<rangle> \<in> reorg(C, B, B)", simp)
+apply(rule reorgI, (elim typ_rels, simp)+)
+apply(rule invI, rule lwirI, (elim typ_rels, simp)+, simp_all)
+done
 
-find_theorems "_\<rightarrow>_ \<subseteq> _\<rightarrow>_"
-find_theorems name: spair
-find_theorems name: bex
-find_theorems rwir name: Wiring.RubyI
-find_theorems name: Relation
-find_theorems name: lwir -name: Ruby
+lemma loop2_loop2'_iff_typ_sig: 
+  "\<lbrakk> R:A*B<~>C*B; loop2'(A,B,C,R):A<~>C; x:loop2'(A,B,C,R) \<rbrakk> \<Longrightarrow> x:loop2(R)"
+apply(auto, drule subsetD, simp, safe)
+apply(unfold loop2_def loop2'_def)
+apply(elim compE, typecheck add: inv_type Fst_type, simp_all)
+apply(elim invE, typecheck)
+apply(elim sig_pairE, simp)
+apply(elim reorgE, simp_all)
+apply(elim lwirE, simp_all)
+apply(elim FstE parE, simp_all, elim IdE, simp)
+apply(intro compI)
+apply(subgoal_tac "<ac, <ac#<bd#bd>>>:lwir(ddtyp(R), rdtyp(R))", simp)
+apply(rule lwirI, simp_all add: typ_sigs)
+apply(rule invI, subgoal_tac "<<<ac#bd>#bd>, <ac#<bd#bd>>>:reorg(ddtyp(R), rdtyp(R), rdtyp(R))", simp)
+apply(rule reorgI, simp_all add: typ_sigs)
+apply(subgoal_tac "\<langle><<ac#bd>#bd>,<<a#bd>#bd>\<rangle> \<in> Fst(rdtyp(R), R)", simp)
+apply(rule FstI, rule parI, simp_all, rule IdI, simp_all add: typ_sigs)
+apply(subgoal_tac "\<langle><<a#bd>#bd>,<a#<bd#bd>>\<rangle> \<in> reorg(drtyp(R), rdtyp(R), rdtyp(R))", simp)
+apply(rule reorgI, simp_all add: typ_sigs)
+apply(rule invI, rule lwirI, simp_all add: typ_sigs)
+done
 
-find_theorems comp
+theorem loop2_loop2'_iff: "R:A*B<~>C*B \<Longrightarrow> loop2(R) = loop2'(A,B,C,R)"
+apply(rule, rule)
+apply(subgoal_tac "loop2(R):ddtyp(R)<~>drtyp(R)")
+apply(rule loop2_loop2'_iff_typ_rel, blast+)
+defer
+apply(rule)
+apply(subgoal_tac "loop2'(A,B,C,R):A<~>C")
+apply(rule loop2_loop2'_iff_typ_sig, blast+)
+apply(unfold loop2'_def loop2_def)
+apply(typecheck add: inv_type Fst_type)
+done
 
+theorem loop2_type: "\<lbrakk> R:A*B<~>C*B \<rbrakk> \<Longrightarrow> loop2(R):A<~>C"
+apply(subst loop2_loop2'_iff, simp)
+apply(unfold loop2'_def)
+apply(typecheck add: inv_type Fst_type)
+done
 
+theorem loop2R: "\<lbrakk> A:ChTy; B:ChTy; C:ChTy; R:A*B<R>C*B \<rbrakk> \<Longrightarrow> loop2(R):A<R>C"
+apply(subst loop2_loop2'_iff)
+apply(frule rev_subsetD[of R], rule ruby_sub_sig, simp)
+apply(unfold loop2'_def)
+apply(intro RubyR FstR invR)
+apply(((rule lwirR | rule reorgR | rule FstR), simp+)+)
+done
 
+theorem loop2_iff: 
+  "\<lbrakk> R:A*B<~>C*B; a:sig(A'); c:sig(C') \<rbrakk>
+    \<Longrightarrow> <a,c>:loop2(R) \<longleftrightarrow> (EX b:sig(B). <<a#b>, <c#b>>:R)"
+apply(subst loop2_loop2'_iff, simp, unfold loop2'_def)
+apply(rule)
+apply(elim compE, typecheck add: inv_type Fst_type, simp_all)
+apply(elim invE, typecheck)
+apply(elim sig_pairE, simp)
+apply(elim reorgE, simp_all)
+apply(elim lwirE, simp_all)
+apply(elim FstE parE, simp_all, elim IdE, simp)
+apply(rule, simp, simp)
+apply(erule bexE)
+apply(frule mem_rel_type, simp, erule conjE)
+apply(drule spair_type_rev, simp, simp)
+apply(drule spair_type_rev, simp)
+apply(erule conjE, simp, erule conjE)
+apply(intro compI)
+apply(subgoal_tac "<a, <a#<b#b>>>:lwir(A,B)", simp)
+apply(rule lwirI, simp+)
+apply(rule invI, subgoal_tac "<<<a#b>#b>, <a#<b#b>>>:reorg(A,B,B)", simp)
+apply(rule reorgI, simp_all)
+apply(subgoal_tac "\<langle><<a#b>#b>,<<c#b>#b>\<rangle> \<in> Fst(B, R)", simp)
+apply(rule FstI, rule parI, simp_all, rule IdI, simp)
+apply(subgoal_tac "\<langle><<c#b>#b>,<c#<b#b>>\<rangle> \<in> reorg(C, B, B)", simp)
+apply(rule reorgI, simp_all)
+apply(rule invI, rule lwirI, simp_all)
+done
 
+theorem loop2I: 
+"\<lbrakk> <<a#b>, <c#b>>:R; R:A*B<~>C*B; 
+  a:sig(A'); b:sig(B); c:sig(C') \<rbrakk> \<Longrightarrow> <a,c>:loop2(R)"
+apply(drule loop2_iff[of _ _ _ _ a _ c _], auto)
+done
+
+theorem loop2E: 
+  "\<lbrakk> <a,c>:loop2(R);
+    \<And>b. \<lbrakk> b:sig(B); <<a#b>,<c#b>>:R \<rbrakk> \<Longrightarrow> P;
+    R:A*B<~>C*B; a:sig(A'); c:sig(C') \<rbrakk> \<Longrightarrow> P"
+apply(drule loop2_iff[of _ _ _ _ a _ c _], auto)
+done
+
+lemma loop4_loop4'_iff_typ_rel:
+  "\<lbrakk> R:(A*B)*C<~>De*(E*B); loop4(R):domain(ddtyp(R))*rdtyp(R)<~>drtyp(R)*domain(rrtyp(R));
+    x:loop4(R) \<rbrakk> \<Longrightarrow> x:loop4'(A,B,C,De,E,R)"
+apply(auto, drule subsetD, simp, safe)
+apply(unfold loop4_def loop4'_def)
+apply(elim compE, typecheck add: loop2_type inv_type, simp_all)
+apply(elim sig_pairE, simp)
+apply(erule crossE, simp_all)
+apply(erule loop2E, typecheck add: inv_type, simp_all)
+apply(erule compE2, typecheck add: inv_type, simp_all)
+apply(thin_tac "yb \<in> sig(De \<times> E \<times> B)")
+apply(erule invE, typecheck)
+apply(elim sig_pairE, simp, erule reorgE, simp_all)
+apply(erule compE2, typecheck, simp)
+apply(elim sig_pairE, simp)
+apply(elim RubyE, typecheck)
+apply(elim sig_pairE, simp, elim RubyE, simp_all)
+apply(intro RubyI)
+apply(subgoal_tac "<<ag#bf>, <bf#ag>>:cross(A, C)", simp)
+apply(rule crossI, (elim typ_rels, simp)+, simp)
+apply(rule loop2I, typecheck add: inv_type, simp_all)
+apply(subgoal_tac 
+      "\<langle><<bf#ag>#bh>,<<ac#ad>#bh>\<rangle> \<in> reorg(C, A, B);;cross(C, A \<times> B);;R;;reorg(De, E, B)~", simp)
+apply(intro RubyI invI)
+apply(subgoal_tac "\<langle><<bf#ag>#bh>,<bf#<ag#bh>>\<rangle> \<in> reorg(C, A, B)", simp)
+apply(rule reorgI, (elim typ_rels, simp)+, simp+)
+apply(subgoal_tac "\<langle><bf#<ag#bh>>,<<ag#bh>#bf>\<rangle> \<in> cross(C, A \<times> B)", simp)
+apply(rule crossI, (elim typ_rels, simp)+, simp+)
+apply(rule reorgI, (elim typ_rels, simp)+, simp+)
+done
+
+lemma loop4_loop4'_iff_typ_sig:
+  "\<lbrakk> R:(A*B)*C<~>De*(E*B); loop4'(A,B,C,De,E,R):A*C<~>De*E;
+    x:loop4'(A,B,C,De,E,R) \<rbrakk> \<Longrightarrow> x:loop4(R)"
+apply(auto, drule subsetD, simp, safe)
+apply(elim sig_pairE, simp)
+apply(unfold loop4_def loop4'_def)
+apply(elim compE, typecheck add: inv_type loop2_type, simp_all)
+apply(elim sig_pairE, simp, elim crossE, simp_all)
+apply(elim loop2E, typecheck add: inv_type, simp_all)
+apply(erule compE, typecheck add: inv_type, simp)
+apply(erule invE, typecheck, elim sig_pairE, simp, erule reorgE, simp_all)
+apply(erule compE, typecheck, simp, elim sig_pairE, simp)
+apply(erule compE, typecheck, elim sig_pairE, simp, erule crossE, simp_all)
+apply(erule reorgE, simp_all)
+apply(intro RubyI)
+apply(subgoal_tac "<<af#bf>, <bf#af>>:cross(domain(ddtyp(R)), rdtyp(R))", simp)
+apply(rule crossI, simp_all add: typ_sigs)
+apply(rule loop2I, typecheck add: inv_type, simp_all)
+apply(subgoal_tac 
+      "\<langle><<bf#af>#bg>,<<ac#ad>#bg>\<rangle> \<in> 
+            reorg(rdtyp(R), domain(ddtyp(R)), range(ddtyp(R))) ;; 
+            cross(rdtyp(R), domain(ddtyp(R)) \<times> range(ddtyp(R))) ;;
+            R ;;
+            reorg(drtyp(R), domain(rrtyp(R)), range(ddtyp(R)))~", simp)
+apply(intro RubyI invI)
+apply(subgoal_tac "\<langle><<bf#af>#bg>,<bf#<af#bg>>\<rangle> \<in> reorg(rdtyp(R), domain(ddtyp(R)), range(ddtyp(R)))", simp)
+apply(rule reorgI, (simp add: typ_sigs)+)
+apply(subgoal_tac "\<langle><bf#<af#bg>>,<<af#bg>#bf>\<rangle> \<in> cross(rdtyp(R), domain(ddtyp(R)) \<times> range(ddtyp(R)))", simp)
+apply(rule crossI, (simp add: typ_sigs)+)
+apply(typecheck, (simp add: typ_sigs)+)
+apply(rule reorgI, simp_all add: typ_sigs)
+done
+
+theorem loop4_loop4'_iff: 
+  "R:(A*B)*C<~>De*(E*B) \<Longrightarrow> loop4(R) = loop4'(A,B,C,De,E,R)"
+apply(rule, rule)
+apply(subgoal_tac "loop4(R):domain(ddtyp(R))*rdtyp(R)<~>drtyp(R)*domain(rrtyp(R))")
+apply(rule loop4_loop4'_iff_typ_rel, blast+)
+defer
+apply(rule)
+apply(subgoal_tac "loop4'(A,B,C,De,E,R):A*C<~>De*E")
+apply(rule loop4_loop4'_iff_typ_sig, blast+)
+apply(unfold loop4'_def loop4_def)
+apply(typecheck add: loop2_type inv_type)
+done
+
+theorem loop4_type: "\<lbrakk> R:(A*B)*C<~>De*(E*B) \<rbrakk> \<Longrightarrow> loop4(R):A*C<~>De*E"
+apply(subst loop4_loop4'_iff, simp)
+apply(unfold loop4'_def, typecheck add: inv_type loop2_type)
+done
+
+theorem loop4R: 
+  "\<lbrakk> A:ChTy; B:ChTy; C:ChTy; De:ChTy; E:ChTy; 
+    R:(A*B)*C<R>De*(E*B) \<rbrakk> \<Longrightarrow> loop4(R):A*C<R>De*E"
+apply(subst loop4_loop4'_iff)
+apply(frule rev_subsetD[of R], rule ruby_sub_sig, simp)
+apply(unfold loop4'_def)
+apply(intro RubyR loop2R[of _ B])
+apply(((rule crossR | rule reorgR | rule invR), simp_all add: prod_in_chty)+)
+apply(rule invR, rule reorgR, simp+)
+done
+
+theorem loop4_iff:
+  "\<lbrakk> R:(A*B)*C<~>De*(E*B); a:sig(A'); c:sig(C'); d:sig(De'); e:sig(E') \<rbrakk>
+    \<Longrightarrow> <<a#c>,<d#e>>:loop4(R) \<longleftrightarrow> (EX b:sig(B). <<<a#b>#c>,<d#<e#b>>>:R)"
+apply(rule)
+apply(unfold loop4_def loop4'_def)
+apply(elim compE, typecheck add: loop2_type inv_type, simp_all)
+apply(elim sig_pairE, simp)
+apply(erule crossE, simp_all)
+apply(erule loop2E, typecheck add: inv_type, simp_all)
+apply(erule compE2, typecheck add: inv_type, simp_all)
+apply(erule invE, typecheck)
+apply(elim sig_pairE, simp, erule reorgE, simp_all)
+apply(erule compE2, typecheck, simp)
+apply(elim sig_pairE, simp)
+apply(elim RubyE, typecheck)
+apply(elim sig_pairE, simp, elim RubyE, simp_all)
+apply(blast)
+apply(erule bexE)
+apply(intro RubyI)
+apply(subgoal_tac "<<a#c>, <c#a>>:cross(domain(ddtyp(R)), rdtyp(R))", simp)
+apply(rule crossI, simp_all add: typ_sigs)
+apply(rule loop2I, typecheck add: inv_type, simp_all)
+apply(subgoal_tac 
+      "\<langle><<c#a>#b>,<<d#e>#b>\<rangle> \<in> 
+            reorg(rdtyp(R), domain(ddtyp(R)), range(ddtyp(R))) ;; 
+            cross(rdtyp(R), domain(ddtyp(R)) \<times> range(ddtyp(R))) ;;
+            R ;;
+            reorg(drtyp(R), domain(rrtyp(R)), range(ddtyp(R)))~", simp)
+apply(intro RubyI invI)
+apply(subgoal_tac "\<langle><<c#a>#b>,<c#<a#b>>\<rangle> \<in> reorg(rdtyp(R), domain(ddtyp(R)), range(ddtyp(R)))", simp)
+apply(rule reorgI, (simp add: typ_sigs)+)
+apply(subgoal_tac "\<langle><c#<a#b>>,<<a#b>#c>\<rangle> \<in> cross(rdtyp(R), domain(ddtyp(R)) \<times> range(ddtyp(R)))", simp)
+apply(rule crossI, (simp add: typ_sigs)+)
+apply(typecheck, (simp add: typ_sigs)+)
+apply(rule reorgI, simp_all add: typ_sigs)
+done
+
+theorem loop4I: 
+  "\<lbrakk> R:(A*B)*C<~>De*(E*B); a:sig(A'); b:sig(B); c:sig(C');
+    d:sig(De'); e:sig(E'); <<<a#b>#c>,<d#<e#b>>>:R \<rbrakk>
+    \<Longrightarrow> <<a#c>,<d#e>>:loop4(R)"
+apply(drule loop4_iff[of _ _ _ _ _ _ a _ c _ d _ e], auto)
+done
+
+theorem loop4E: 
+  "\<lbrakk> <<a#c>,<d#e>>:loop4(R);
+    R:(A*B)*C<~>De*(E*B); a:sig(A'); c:sig(C'); d:sig(De'); e:sig(E'); 
+    \<And>b. \<lbrakk> b:sig(B); <<<a#b>#c>,<d#<e#b>>>:R \<rbrakk> \<Longrightarrow> P \<rbrakk>
+    \<Longrightarrow> P"
+apply(drule loop4_iff[of _ _ _ _ _ _ a _ c _ d _ e], auto)
+done
+
+lemmas Ruby_type = Ruby_type
+  inv_type Conj_type Fst_type Snd_type
+  below_type below_type2 beside_type beside_type2 loop2_type loop4_type
+
+lemmas RubyR = RubyR
+  invR ConjR FstR SndR belowR besideR loop2R loop4R
+
+lemmas RubyI = RubyI
+  invI ConjI FstI SndI belowI besideI loop2I loop4I
+
+lemmas RubyE = RubyE
+  invE ConjE FstE SndE belowE besideE loop2E loop4E
+
+lemmas RubyE2 =
+  compE2 belowE2 besideE2
 
 
 end
