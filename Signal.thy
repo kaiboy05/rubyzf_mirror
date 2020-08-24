@@ -10,7 +10,7 @@ consts
 syntax
   "time" :: "i"
 translations
-  "time"=> "CONST int"
+  "time" => "CONST int"
 
 syntax
   "sig" :: "i \<Rightarrow> i"        ("(sig'(_'))" [75] 75)
