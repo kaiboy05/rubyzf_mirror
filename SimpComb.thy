@@ -760,9 +760,13 @@ theorem loop4E:
 apply(drule loop4_iff[of _ _ _ _ _ _ a _ c _ d _ e], auto)
 done
 
-lemmas Ruby_type = Ruby_type
+lemmas SimpComb_type = 
   inv_type Conj_type Fst_type Snd_type
   below_type below_type2 beside_type beside_type2 loop2_type loop4_type
+
+lemmas Ruby_type = Ruby_type SimpComb_type
+
+declare SimpComb_type [TC]
 
 lemmas RubyR = RubyR
   invR ConjR FstR SndR belowR besideR loop2R loop4R
