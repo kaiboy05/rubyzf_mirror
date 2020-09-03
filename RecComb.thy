@@ -775,4 +775,10 @@ apply(erule invE, typecheck add: colf_type)
 apply(erule colf_zeroE, simp+)
 done
 
+lemmas RecComb_type = 
+  powf_type mapf_type tri_type
+  colf_type rowf_type 
+
+declare RecComb_type [TC]
+
 end
