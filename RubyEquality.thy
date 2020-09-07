@@ -197,4 +197,58 @@ apply(subgoal_tac "\<langle><a#b>, <ya#yb>\<rangle> \<in> [[R,T]]", simp)
 apply((intro RubyI, simp_all)+)
 done
 
+lemma B_not_zero: "B \<noteq> 0 \<Longrightarrow> sig(B) \<noteq> 0"
+apply(blast)
+done
+
+theorem p1id: "B \<noteq> 0 \<Longrightarrow> p1(A,B)~ ;; p1(A,B) = Id(A)"
+apply(rule, auto)
+apply(subgoal_tac "p1(A,B)~ ;; p1(A,B) : A<~>A", typecheck)
+apply(simp, drule subsetD, simp, safe)
+apply(elim RubyE, typecheck, simp)
+apply(elim sig_pairE, simp, elim RubyE, simp_all)
+apply(intro RubyI, simp)
+apply(insert Id_type[of A], simp)
+apply(drule subsetD, simp, safe)
+apply(elim RubyE, simp)
+apply(drule B_not_zero)
+apply(drule Choose_def)
+apply(intro RubyI)
+apply(rule p1I, simp+)
+apply(rule p1I, simp+)
+done
+
+theorem comp_inv: "\<lbrakk> R:A<~>B; S:B<~>C \<rbrakk> \<Longrightarrow> (R;;S)~ = S~;;R~"
+apply(rule, auto)
+apply(subgoal_tac "(R ;; S)~ : C<~>A", typecheck)
+apply(simp, drule subsetD, simp, simp_all, safe)
+apply(elim RubyE, typecheck, simp+)
+apply(intro RubyI, simp+)
+apply(subgoal_tac "S~ ;; R~ : C<~>A", typecheck)
+apply(simp, drule subsetD, simp, simp_all, safe)
+apply(elim RubyE, typecheck, simp+)
+apply(intro RubyI, simp+)
+done
+
+theorem par_Id: "[[Id(A), Id(B)]] = Id(A*B)"
+apply(rule, auto)
+apply(subgoal_tac "[[Id(A), Id(B)]] : _<~>_", typecheck)
+apply(simp, drule subsetD, simp)
+apply(safe, elim sig_pairE, simp)
+apply(elim RubyE, typecheck, simp+)
+apply(intro RubyI, simp)
+apply(subgoal_tac "Id(A*B):_<~>_", typecheck)
+apply(simp, drule subsetD, simp)
+apply(safe, elim sig_pairE, simp+)
+apply(elim RubyE, typecheck, simp+)
+apply(intro RubyI, simp+)
+done
+
+
+
+
+find_theorems name: Hilbert
+find_theorems "_ : domain(_)"
+find_theorems "_:{_:_._}"
+
 end
