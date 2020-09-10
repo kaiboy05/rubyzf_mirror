@@ -2,6 +2,26 @@ theory RubyEquality
 imports RecComb
 begin
 
+lemma comp_right_eq: "A = B \<Longrightarrow> A;;C = B;;C"
+apply(auto)
+done
+
+lemma comp_left_eq: "A = B \<Longrightarrow> C;;A = C;;B"
+apply(auto)
+done
+
+lemmas comp_eq = comp_right_eq comp_left_eq
+
+lemma beside_right_eq: "A = B \<Longrightarrow> A || C = B || C"
+apply(auto)
+done
+
+lemma beside_left_eq: "A = B \<Longrightarrow> C || A = C || B"
+apply(auto)
+done
+
+lemmas beside_eq = beside_right_eq beside_left_eq
+
 theorem comp_assoc: "\<lbrakk> R:A<~>B; S:B<~>C; T:C<~>D \<rbrakk> \<Longrightarrow> (R;;S);;T = R;;(S;;T)"
 apply(rule, auto)
 apply(subgoal_tac "R ;; S ;; T : A<~>D", typecheck, simp_all)
@@ -244,11 +264,138 @@ apply(elim RubyE, typecheck, simp+)
 apply(intro RubyI, simp+)
 done
 
+theorem apr_apr_inv_Id: "apr(A,x) ;; apr(A,x)~ = Id(nlist[x]A \<times> A)"
+apply(rule, auto)
+apply(subgoal_tac "apr(A,x);;apr(A,x)~ : _<~>_", typecheck)
+apply(simp, drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim compE, typecheck, elim sig_ssnocE, simp)
+apply(elim aprE, simp+)
+apply(elim RubyE, typecheck, simp, intro IdI, simp)
+apply(subgoal_tac "Id(nlist[x]A*A):_<~>_", typecheck)
+apply(simp, drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim RubyE, simp+)
+apply(intro RubyI, simp+)
+apply((rule aprI, simp+)+)
+done
+
+theorem reorg_reorg_inv_Id: "reorg(A,B,C) ;; reorg(A,B,C)~ = Id((A*B)*C)"
+apply(rule, auto)
+apply(subgoal_tac "reorg(A,B,C) ;; reorg(A,B,C)~ : _<~>_", typecheck)
+apply(simp, drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim compE, typecheck, elim sig_pairE, simp)
+apply(elim RubyE, typecheck, simp)
+apply(intro IdI, simp)
+apply(subgoal_tac "Id((A*B)*C):_<~>_", typecheck)
+apply(simp, drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim RubyE, simp+)
+apply(intro RubyI, simp+)
+apply((rule reorgI, simp+)+)
+done
+
+theorem reorg_reorg_inv_Id2: "reorg(A,B,C)~ ;; reorg(A,B,C) = Id(A*B*C)"
+apply(rule, auto)
+apply(subgoal_tac "reorg(A,B,C)~ ;; reorg(A,B,C) : _<~>_", typecheck)
+apply(simp, drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim compE, typecheck, elim sig_pairE, simp)
+apply(elim RubyE, typecheck, simp)
+apply(intro IdI, simp)
+apply(subgoal_tac "Id(A*B*C):_<~>_", typecheck)
+apply(simp, drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim RubyE, simp+)
+apply(intro RubyI, simp+)
+apply((rule reorgI, simp+)+)
+done
+
+theorem Fst_par_comp: "\<lbrakk> R:C<~>D; S:D<~>E; T:A<~>B \<rbrakk> \<Longrightarrow> Fst(A,R);;[[S,T]] = [[R;;S,T]]"
+apply(subst Id_left[of T A B, THEN sym], simp) back
+apply(subst par_comb[THEN sym], typecheck)
+apply(intro comp_eq)
+apply(subst Fst_def, simp)
+done
+
+theorem Snd_par_comp: "\<lbrakk> R:C<~>D; S:D<~>E; T:A<~>B \<rbrakk> \<Longrightarrow> Snd(A,R);;[[T,S]] = [[T,R;;S]]"
+apply(subst Id_left[of T A B, THEN sym], simp) back
+apply(subst par_comb[THEN sym], typecheck)
+apply(intro comp_eq)
+apply(subst Snd_def, simp)
+done
+
+theorem par_reorg_assoc: 
+  "\<lbrakk> R:A<~>B; S:C<~>D; T:E<~>F \<rbrakk> 
+    \<Longrightarrow> [[R,[[S,T]]]] = reorg(A,C,E)~ ;; [[[[R,S]],T]] ;; reorg(B,D,F)"
+apply(rule, auto)
+apply(subgoal_tac "[[R,[[S,T]]]] : _<~>_", typecheck, simp_all)
+apply(drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim RubyE, typecheck)
+apply(intro RubyI)
+apply(rule reorgI, simp+)
+apply(subgoal_tac "<<<a#ab>#bb>, <<aa#ac>#bc>> : [[[[R,S]],T]]", simp)
+apply(intro RubyI, simp+)
+apply(rule reorgI, simp+)
+apply(subgoal_tac "reorg(A, C, E)~ ;; [[[[R,S]],T]] ;; reorg(B, D, F) : _<~>_", typecheck, simp_all)
+apply(drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim compE, typecheck, simp_all)
+apply(elim sig_pairE, simp)
+apply(elim RubyE, typecheck, simp)
+apply(intro RubyI, simp+)
+done
+
+theorem par_reorg_assoc2: 
+  "\<lbrakk> R:A<~>B; S:C<~>D; T:E<~>F \<rbrakk> 
+    \<Longrightarrow> [[[[R,S]],T]] = reorg(A,C,E) ;; [[R,[[S,T]]]] ;; reorg(B,D,F)~"
+apply(subst par_reorg_assoc, simp_all)
+apply((subst comp_assoc, typecheck, simp+)+)
+apply(subst reorg_reorg_inv_Id)
+apply(subst Id_right, typecheck, simp_all)
+apply((subst comp_assoc[THEN sym], typecheck, simp+)+)
+apply(subst reorg_reorg_inv_Id)
+apply(subst Id_left, typecheck, simp_all)
+done
+
+theorem Fst_distrib: "\<lbrakk> R:A<~>B; S:B<~>C \<rbrakk> \<Longrightarrow> Fst(D, R;;S) = Fst(D,R) ;; Fst(D,S)"
+apply((subst Fst_def)+)
+apply(subst par_comb, typecheck)
+apply(subst Id_left, typecheck, simp)
+done
+
+theorem comp_p1_inv: "R:A<~>A \<Longrightarrow> R;;p1(A,B)~ = p1(A,B)~;;Fst(B,R)"
+apply(rule, auto)
+apply(subgoal_tac "R;;p1(A,B)~ : _<~>_", typecheck, simp_all)
+apply(drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim compE, typecheck, simp+)
+apply(elim RubyE, typecheck, simp)
+apply(intro RubyI, rule p1I, simp+, rule parI, simp+, rule IdI, simp+)
+apply(subgoal_tac "p1(A,B)~;;Fst(B,R):_<~>_", typecheck, simp_all)
+apply(drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim compE, typecheck, simp+, elim sig_pairE, simp)
+apply(elim RubyE, typecheck, simp)
+apply(intro RubyI, simp, rule p1I, simp+)
+done
+
+theorem par_Fst_reorg_inv:
+  " \<lbrakk> R:A<~>C; S:B<~>D \<rbrakk> \<Longrightarrow>
+    [[R,Fst(F,S)]];;reorg(C,D,F)~ = reorg(A,B,F)~ ;; Fst(F, [[R,S]])"
+apply(rule, auto)
+apply(subgoal_tac "[[R,Fst(F, S)]] ;; reorg(C, D, F)~ : _<~>_", typecheck, simp_all)
+apply(drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim compE, typecheck, simp+, elim sig_pairE, simp)
+apply(erule invE, typecheck, erule reorgE, typecheck, simp)
+apply(erule parE, simp+, erule FstE, erule parE, simp+, erule IdE, simp)
+apply(intro RubyI, rule reorgI, simp+)
+apply(intro RubyI, simp+)
+apply(subgoal_tac "reorg(A, B, F)~ ;; Fst(F, [[R,S]]) : _<~>_", typecheck, simp_all)
+apply(drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim compE, typecheck, simp+, elim sig_pairE, simp)
+apply(erule invE, typecheck, erule reorgE, typecheck, simp)
+apply(erule FstE, erule parE, simp+, elim RubyE, simp+)
+apply(intro RubyI)
+defer
+apply(rule reorgI, simp+, intro RubyI, simp+)
+done
 
 
-
-find_theorems name: Hilbert
+find_theorems "reorg"
 find_theorems "_ : domain(_)"
-find_theorems "_:{_:_._}"
+find_theorems "_ = _" "_ ;; _ = _;; _"
 
 end

@@ -30,16 +30,6 @@ apply(unfold rdrf_def)
 apply(subst colf_zero_iff, simp)
 done
 
-lemma comp_right_eq: "A = B \<Longrightarrow> A;;C = B;;C"
-apply(auto)
-done
-
-lemma comp_left_eq: "A = B \<Longrightarrow> C;;A = C;;B"
-apply(auto)
-done
-
-lemmas comp_eq = comp_right_eq comp_left_eq
-
 theorem rdrf_zero_iff2:
   "R:nat\<rightarrow>A*B<~>B \<Longrightarrow> rdrf(B,0,R) = 
     Fst(B,NNIL);;cross(nlist[0]nat,B);;p1(B,nlist[0]nat)"
@@ -160,16 +150,6 @@ apply((rule p2I, simp+)+)
 apply(rule p1I, simp+)
 done
 
-lemma beside_right_eq: "A = B \<Longrightarrow> A || C = B || C"
-apply(auto)
-done
-
-lemma beside_left_eq: "A = B \<Longrightarrow> C || A = C || B"
-apply(auto)
-done
-
-lemmas beside_eq = beside_right_eq beside_left_eq
-
 theorem rdrf_succ_iff: 
   "\<lbrakk> n:nat; Rf:nat\<rightarrow>A*B<~>B \<rbrakk> \<Longrightarrow>
     rdrf(B,succ(n),Rf) =
@@ -226,8 +206,8 @@ apply(simp)
 done
 
 theorem pow_commute_F:
-  "\<lbrakk> R:A<~>A; F:nat\<rightarrow>(A*A)<~>A; n:nat; m:nat;
-    ALL n:nat. ([[R,R]];;F`n = F`n;;R) \<rbrakk>
+  "\<lbrakk> ALL n:nat. ([[R,R]];;F`n = F`n;;R); 
+    R:A<~>A; F:nat\<rightarrow>(A*A)<~>A; n:nat; m:nat \<rbrakk>
   \<Longrightarrow> [[pow(A,n,R), pow(A,n,R)]] ;; F`m = F`m ;; pow(A,n,R)"
 apply(induct_tac n)
 apply((subst powf_zero_iff)+, simp)
@@ -269,10 +249,66 @@ theorem hornerf:
     rdrf(A,n,lam k:nat.(Snd(A,R);;(F`k)))"
 apply(induct_tac n)
 apply(rule hornerf_zero, simp+)
-oops
+apply(drule pow_commute_F, simp+)
+apply(subst tri_succ_iff, simp+)
+apply(subst rdrf_succ_iff, simp+)
+apply(subst Fst_def)
+apply((subst comp_assoc[THEN sym], typecheck add: rdrf_type, simp+)+)
+apply(subst par_comb, typecheck, simp+)
+apply(subst comp_assoc, typecheck, simp+)
+apply(subst comp_assoc, typecheck, simp+)
+apply(subst comp_assoc, typecheck, simp+)
+apply(subst apr_apr_inv_Id)
+apply((subst Id_right, typecheck, simp+)+)
+apply(subst Fst_par_comp[THEN sym], typecheck, simp+)
+apply(subst par_reorg_assoc2, typecheck, simp_all)
+apply(subst below_iff2, typecheck add: rdrf_type)
+apply(subst rdrf_succ_iff, typecheck, simp+, rule comp_eq)
+apply((subst comp_assoc, typecheck add: rdrf_type, simp+)+, rule comp_eq)
+apply(subst below_iff2, typecheck add: rdrf_type, simp+)
+apply((subst comp_assoc, typecheck add: rdrf_type, simp+)+, rule comp_eq)
+apply((subst comp_assoc[THEN sym], typecheck add: rdrf_type, simp+)+, rule comp_eq)
+apply(subst Fst_distrib, typecheck add: rdrf_type, simp+)
+apply(subst Fst_distrib, typecheck add: rdrf_type)
+apply((subst comp_assoc[THEN sym], typecheck add: rdrf_type, simp+)+, rule comp_eq)
+apply(subgoal_tac 
+      "[[tri(A, x, R),[[powf(A, x, \<lambda>_\<in>nat. R),powf(A, succ(x), \<lambda>_\<in>nat. R)]]]] ;; 
+        reorg(nlist[x]A, A, A)~ ;; reorg(nlist[x]A, A, A) =
+      [[tri(A, x, R),[[powf(A, x, \<lambda>_\<in>nat. R),powf(A, succ(x), \<lambda>_\<in>nat. R)]]]]", simp,
+      thin_tac "[[tri(A, x, R),[[powf(A, x, \<lambda>_\<in>nat. R),powf(A, succ(x), \<lambda>_\<in>nat. R)]]]] ;; 
+        reorg(nlist[x]A, A, A)~ ;; reorg(nlist[x]A, A, A) =
+      [[tri(A, x, R),[[powf(A, x, \<lambda>_\<in>nat. R),powf(A, succ(x), \<lambda>_\<in>nat. R)]]]]")
+apply(subst Snd_def, subst par_comb, typecheck, simp+)
+apply(subst Id_right, typecheck, simp+)
+apply(subst comp_assoc[of 
+        "[[powf(A, _, \<lambda>_\<in>nat. R),powf(A, succ(_), \<lambda>_\<in>nat. R)]]" _ _
+        "F`_" _ "p1(A, nat)~", THEN sym], typecheck, simp+)
+apply(subst powf_succ2, simp+)
+apply(subst Snd_par_comp[of R _ _ "powf(A, _, \<lambda>_\<in>nat. R)" _ "powf(A, _, \<lambda>_\<in>nat. R)",THEN sym],
+      typecheck, simp+)
+apply(subst comp_assoc[of 
+        "Snd(A, R)" _ _ 
+        "[[powf(A, _, \<lambda>_\<in>nat. R),powf(A, _, \<lambda>_\<in>nat. R)]]" _
+        "F`_"], typecheck, simp+)
+apply(subst comp_assoc[of "Snd(A, R)" _ _ "F`_ ;; powf(A, _, \<lambda>_\<in>nat. R)" _ "p1(A, nat)~"],
+      typecheck, simp+)
+apply(subst comp_assoc[of "F`_" _ _ "powf(A, _, \<lambda>_\<in>nat. R)" _ "p1(A, nat)~"],
+      typecheck, simp+)
+apply(subst comp_p1_inv, typecheck, simp+)
+apply(subst comp_assoc[THEN sym], typecheck, simp+)
+apply(subst comp_assoc[THEN sym], typecheck, simp+)
+apply(subst Snd_par_comp[THEN sym], typecheck, simp+)
+apply((subst comp_assoc, typecheck add: rdrf_type, simp+)+, rule comp_eq)
+apply(subst comp_assoc[THEN sym], typecheck add: rdrf_type, simp+)
+apply(subst par_Fst_reorg_inv, typecheck, simp+)
+apply(subst comp_assoc, typecheck add: rdrf_type, simp+, rule comp_eq)
+apply(subst Fst_distrib[THEN sym], typecheck add: rdrf_type, simp+)
+apply(subst comp_assoc, typecheck add: rdrf_type, simp+)
+apply(subst reorg_reorg_inv_Id2, subst Id_right, typecheck, simp+)
+done
 
 
 
-find_theorems "sig(nlist[0]_)"
+find_theorems name: comp_right_eq
 
 end
