@@ -9,6 +9,9 @@ definition rdrf :: "[i,i,i] \<Rightarrow> i" where
 definition sig0 :: "i" where
   "sig0 == (lam t:int. 0)"
 
+definition fork :: "[i,i] \<Rightarrow> i" where
+  "fork(A,n) == p1(A, nlist[n]nat)~ ;; row(A,n,p1(A,nat);;dub(A)) ;; p1(nlist[n]A, A)"
+
 theorem rdrf_type: 
   "\<lbrakk> n:nat; R:nat\<rightarrow>A*B<~>B \<rbrakk> \<Longrightarrow> rdrf(B,n,R):nlist[n]A*B<~>B"
 apply(unfold rdrf_def)
@@ -307,8 +310,291 @@ apply(subst comp_assoc, typecheck add: rdrf_type, simp+)
 apply(subst reorg_reorg_inv_Id2, subst Id_right, typecheck, simp+)
 done
 
+theorem map_tri_comm1: 
+  "\<lbrakk> R:A<~>A; S:A<~>A; n:nat; R;;S=S;;R \<rbrakk> \<Longrightarrow> tri(A,n,R);;Map(n,S) = Map(n,S);;tri(A,n,R)"
+apply(induct_tac n)
+apply((subst tri_zero_iff, subst mapf_zero_iff)+, simp)
+apply(subst tri_succ_iff, simp+, subst mapf_succ_iff, typecheck, simp+)
+apply((subst comp_assoc[THEN sym], typecheck, simp+)+)
+apply(subst comp_assoc, typecheck, simp+)
+apply(subst comp_assoc, typecheck, simp+)
+apply(subst comp_assoc, typecheck, simp+)
+apply(subst apr_apr_inv_Id, subst Id_right, typecheck, simp+)
+apply(subst comp_assoc, typecheck, simp+)
+apply(subst par_comb, typecheck, simp+)
+apply(subst tri_succ_iff, simp+, subst mapf_succ_iff, typecheck, simp+)
+apply((subst comp_assoc[THEN sym], typecheck, simp+)+, rule comp_eq)
+apply((subst comp_assoc, typecheck, simp+)+, rule comp_eq)
+apply(subst comp_assoc[THEN sym], typecheck, simp+)
+apply(subst comp_assoc[THEN sym], typecheck, simp+)
+apply(subst comp_assoc, typecheck, simp+)
+apply(subst apr_apr_inv_Id, subst Id_right, typecheck, simp+)
+apply(subst par_comb, typecheck, simp+)
+apply(subst pow_disturb_lemma, simp+)
+done
 
+theorem fork_type: "\<lbrakk> n:nat \<rbrakk> \<Longrightarrow> fork(A,n):A<~>nlist[n]A"
+apply(unfold fork_def, typecheck)
+done
 
-find_theorems name: comp_right_eq
+theorem nat_nlist_sig: "n:nat \<Longrightarrow> EX s. s:sig(nlist[n]nat)"
+apply(induct_tac n)
+apply(insert snil_type[of nat], blast)
+apply(erule exE)
+apply(frule ssnoc_type[of _ sig0 nat], simp+, blast)
+done
+
+lemma nat_nlist_sig_choose: 
+  "n:nat \<Longrightarrow> Choose(sig(nlist[n]nat)):sig(nlist[n]nat)"
+apply(drule nat_nlist_sig)
+apply(subgoal_tac "sig(nlist[n]nat) \<noteq> 0")
+apply(subst Choose_def, auto)
+done
+
+theorem row_eq_lemma: 
+  "\<lbrakk> n:nat; a:sig(A); b:sig(A) \<rbrakk> \<Longrightarrow>
+    ALL l:sig(nlist[n]A). ALL la:sig(nlist[n]nat).
+    (<<a#la>,<l#b>>: row(A,n,p1(A,nat);;dub(A)) \<longrightarrow> a = b)"
+apply(induct_tac n)
+apply(rule, rule, rule)
+apply(elim sig_nlist0E, simp, erule rowf_zeroE, 
+      simp, simp, simp, simp)
+apply(rule, rule, rule)
+apply(elim sig_ssnocE, drule bspec, simp, drule bspec, simp+)
+apply(elim rowf_succE, typecheck, simp)
+apply(elim compE, typecheck)
+apply(elim RubyE, typecheck, simp)
+done
+
+lemma fork_succ_rowf_lemma:
+  "\<lbrakk> a:sig(A); b \<in> sig(A); n:nat \<rbrakk> \<Longrightarrow>
+  ALL ba:sig(nlist[n]nat). ALL l:sig(nlist[n]A). 
+  \<langle><a#ba>, <l#b>\<rangle> \<in> rowf(A, n, \<lambda>_\<in>nat. p1(A, nat) ;; dub(A)) \<longrightarrow> a = b"
+apply(induct_tac n, rule, rule, rule)
+apply(elim sig_nlist0E, simp)
+apply(erule rowf_zeroE, typecheck)
+apply(rule, rule, rule, elim sig_ssnocE)
+apply(drule bspec, simp, drule bspec, simp+)
+apply(elim rowf_succE, typecheck, simp)
+apply(elim RubyE, typecheck, simp)
+done
+
+theorem fork_succI:
+  "\<lbrakk> <a,l>:fork(A,n); n:nat; l:sig(nlist[n]A); a:sig(A) \<rbrakk> \<Longrightarrow>
+    <a,[l<@a|n]>:fork(A,succ(n))"
+apply(unfold fork_def)
+apply(elim compE, typecheck, elim sig_pairE, simp)
+apply(elim RubyE, typecheck, simp+)
+apply(intro RubyI, typecheck)
+apply(rule p1I, simp)
+apply(subgoal_tac "[ba<@sig0|n]:sig(nlist[succ(n)]nat)", simp+)
+apply(subst rowf_succ, simp+)
+apply(subgoal_tac "\<langle><b#sig0>, <a#a>\<rangle> \<in> p1(A, nat) ;; dub(A)", blast)
+apply(subgoal_tac "a = b", simp)
+apply(intro RubyI, rule p1I, simp+, rule dubI, simp)
+apply(frule row_eq_lemma[of n a A], simp, rotate_tac 5, simp)
+apply(drule bspec, simp, drule bspec, simp+)
+apply(rule p1I, simp+)
+done
+
+theorem fork_succE:
+  "\<lbrakk> <a,[l<@b|n]>:fork(A,succ(n)); \<lbrakk> <a,l>:fork(A,n); a=b \<rbrakk> \<Longrightarrow> P;
+    n:nat; l:sig(nlist[n]A); a:sig(A); b:sig(A) \<rbrakk> \<Longrightarrow> P"
+apply(subst (asm) fork_def)
+apply(elim compE, typecheck)
+apply(elim sig_pairE, simp)
+apply(elim invE p1E, typecheck, simp)
+apply(elim sig_ssnocE, simp, elim rowf_succE, typecheck, simp)
+apply(elim RubyE, typecheck)
+apply(frule row_eq_lemma[of n a A b], simp, simp)
+apply(drule bspec, simp, drule bspec, simp, simp)
+apply(subgoal_tac "\<langle>ab, la\<rangle> \<in> fork(A, n)", simp)
+apply(subst fork_def)
+apply(intro RubyI)
+prefer 4
+apply(simp, rule p1I, simp+)
+apply(intro RubyI, simp+)
+done
+
+theorem fork_succ_iff: 
+  "\<lbrakk> n:nat \<rbrakk> \<Longrightarrow>
+    fork(A,succ(n)) = dub(A);;Fst(A,fork(A,n));;apr(A,n)"
+apply(rule, auto)
+apply(subgoal_tac "fork(A,succ(n)):_<~>_", typecheck add: fork_type, simp)
+apply(drule subsetD, simp, safe, elim sig_ssnocE, simp)
+apply(elim fork_succE, typecheck, simp)
+apply(intro RubyI, rule dubI, simp)
+apply(rule parI, simp, rule IdI, simp+, rule aprI, simp+)
+apply(subgoal_tac "dub(A) ;; Fst(A, fork(A, n)) ;; apr(A, n):_<~>_")
+apply(typecheck add: fork_type, simp, drule subsetD, simp, safe)
+apply(elim sig_ssnocE, simp)
+apply(elim compE, typecheck add: fork_type, elim sig_pairE, simp)
+apply(elim RubyE, typecheck, simp)
+apply(rule fork_succI, simp+)
+done
+
+lemma fork_zeroE: "<a,b> : fork(A,0) \<Longrightarrow> b = snil"
+apply(subgoal_tac "fork(A,0):_<~>_", typecheck add: fork_type)
+apply(simp, drule subsetD, simp, safe)
+apply(elim sig_nlist0E, simp)
+done
+
+lemma fork_zeroI: "a:sig(A) \<Longrightarrow> <a,snil>:fork(A,0)"
+apply(unfold fork_def, intro RubyI)
+apply(rule p1I, simp, rule snil_type, simp+)
+apply(subst rowf_zero, simp+)
+apply(intro p1I, simp+)
+done
+
+lemma fork_map_lemma:
+  "R:A<~>B \<Longrightarrow> R ;; fork(B, 1) = fork(A, 1) ;; mapf(1, \<lambda>_\<in>nat. R)"
+apply(rule, auto)
+apply(subgoal_tac "R ;; fork(B, 1) : _<~>_", typecheck add: fork_type, simp_all)
+apply(drule subsetD, simp, safe)
+apply(elim compE, typecheck add: fork_type, simp)
+apply(elim sig_ssnocE sig_nlist0E, simp)
+apply(elim fork_succE fork_zeroE, simp_all)
+apply(intro RubyI, rule fork_succI, rule fork_zeroI, simp+)
+apply(subst mapf_succ, typecheck, simp+, rule mapf_zero)
+apply(subgoal_tac "fork(A, 1) ;; mapf(1, \<lambda>_\<in>nat. R) : _<~>_",
+      typecheck add: fork_type, simp_all)
+apply(drule subsetD, simp, safe, elim sig_ssnocE sig_nlist0E, simp)
+apply(elim compE, typecheck add: fork_type, simp_all)
+apply(elim sig_ssnocE sig_nlist0E, simp)
+apply(elim fork_succE, typecheck, simp)
+apply(elim mapf_succE, typecheck, simp_all)
+apply(intro RubyI, simp)
+apply(rule fork_succI, rule fork_zeroI, simp+)
+done
+
+theorem fork_map: 
+  "\<lbrakk> n:nat; R:A<~>B; function(R) \<rbrakk>
+    \<Longrightarrow> 0 < n \<longrightarrow> R;;fork(B,n) = fork(A,n);;Map(n,R)"
+apply(case_tac n, simp+)
+apply(induct_tac x)
+apply(rule fork_map_lemma, simp+)
+apply(subst fork_succ_iff, simp)
+apply(subst fork_succ_iff, simp) back
+apply(subst mapf_succ_iff, typecheck, simp+)
+apply((subst comp_assoc[THEN sym], typecheck add: fork_type, simp+)+)
+apply(rule comp_eq)
+apply(subgoal_tac 
+      "dub(A) ;; Fst(A, fork(A, succ(xa))) ;;
+       apr(A, succ(xa)) ;; apr(A, succ(xa))~ ;; [[mapf(succ(xa), \<lambda>_\<in>nat. R),R]] =
+       dub(A) ;; Fst(A, fork(A, succ(xa))) ;; [[mapf(succ(xa), \<lambda>_\<in>nat. R),R]]", simp)
+apply((subst comp_assoc, typecheck add: fork_type, simp+)+)
+apply(subst Fst_par_comp, typecheck add: fork_type, simp+)
+apply(subgoal_tac 
+      "fork(A, succ(xa)) ;; mapf(succ(xa), \<lambda>_\<in>nat. R) = R ;; fork(B, succ(xa))", simp)
+apply(subst Fst_par_comp2[THEN sym], typecheck add: fork_type, simp+)
+apply((subst comp_assoc[THEN sym], typecheck add: fork_type, simp+)+, rule comp_eq)
+apply(rule duplicate, simp+)
+apply(subst comp_assoc, typecheck add: fork_type, simp_all)
+apply(subst comp_assoc, typecheck add: fork_type, simp_all)
+apply(subst comp_assoc[of "apr(A, succ(_))" _ _ "apr(A, succ(_))~", THEN sym],
+      typecheck, simp+)
+apply(subst apr_apr_inv_Id, subst Id_left, typecheck, simp+)
+done
+
+theorem Comp_fE: 
+  "\<lbrakk> <x,z>:R;;S; \<And>y. \<lbrakk> <x,y>:R; <y,z>:S \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+apply(unfold comp_def, blast)
+done
+
+theorem delayE2: 
+  "\<lbrakk> <x,y>:D(A);
+    \<And> A. \<lbrakk> ALL t:time. x`t = y`(t $+ $#1); x:sig(A); y:sig(A) \<rbrakk> \<Longrightarrow> P \<rbrakk> \<Longrightarrow> P"
+apply(unfold delay_def, blast)
+done
+
+theorem comp_function: 
+  "\<lbrakk> function(R); function(S) \<rbrakk> \<Longrightarrow> function(R;;S)"
+apply(subst function_def, rule, rule, rule, rule, rule)
+apply(elim Comp_fE)
+apply((drule function_apply_equality, simp)+, simp)
+done
+
+theorem D_function: "function(D(A))"
+apply(subst function_def, safe)
+apply(elim delayE2)
+apply((drule ball_int_minus1)+)
+apply(rule fun_extension, simp+)
+done
+
+theorem Id_function: "function(Id(A))"
+apply(subst function_def, safe)
+apply(elim RubyE, simp)
+done
+
+theorem pow_function: "\<lbrakk> n:nat; function(R) \<rbrakk> \<Longrightarrow> function(pow(A,n,R))"
+apply(induct_tac n)
+apply(subst powf_zero_iff, rule Id_function)
+apply(subst powf_succ, simp)
+apply(rule comp_function, simp+)
+done
+
+theorem Conv_cond1:
+  "\<lbrakk> r:nat; w:nat \<rbrakk> \<Longrightarrow>
+    function(pow(A,r,D(A)) ;; pow(A,r,(pow(A,w,D(A)))))"
+apply(rule comp_function)
+apply(rule pow_function, simp, rule D_function)
+apply(rule pow_function, simp, rule pow_function, simp, rule D_function)
+done
+
+theorem Conv_cond2: "\<lbrakk> r:nat \<rbrakk> \<Longrightarrow> function(pow(A,r,D(A)))"
+apply(rule pow_function, simp, rule D_function)
+done
+
+theorem Conv_cond3: 
+  "\<lbrakk> r:nat; w:nat \<rbrakk> \<Longrightarrow>
+    pow(A,r,D(A));;pow(A,w,D(A)) = pow(A,w,D(A)) ;; pow(A,r,D(A))"
+apply(rule pow_pow_comp_comm, typecheck)
+done
+
+theorem Conv_cond4: "D(A) ;; D(A)~ = Id(A)"
+apply(rule delay_Id)
+done
+
+theorem Conv_cond5: "w:nat \<Longrightarrow> pow(A,w,D(A)) ;; (pow(A,w,D(A)))~ = Id(A)"
+apply(induct_tac w)
+apply((subst powf_zero_iff)+)
+apply(subst Id_inv, rule Id_right, typecheck)
+apply((subst powf_succ, simp)+)
+apply(subst compinv, typecheck)
+apply(subst comp_assoc, typecheck)
+apply(subst comp_assoc[of "D(A)" _ _ "D(A)~", THEN sym], typecheck)
+apply(subst Conv_cond4, subst Id_left, typecheck)
+done
+
+theorem Conv_cond6:
+  "\<lbrakk> m:nat; k:nat; Q:nat\<rightarrow>nat\<rightarrow>A*C<~>C \<rbrakk> \<Longrightarrow>
+    Q:nat\<rightarrow>nat\<rightarrow>A*C<R>C \<longrightarrow> [[D(A),D(C)]] ;; (Q`k`m) = (Q`k`m);;D(C)"
+apply(rule)
+apply(subgoal_tac "Q`k`m : A*C<R>C", simp_all)
+apply(subst D_eq_parD)
+apply(erule retime_D_comm)
+done
+
+theorem Conv_cond7:
+  "\<lbrakk> w:nat; m:nat; k:nat; Q:nat\<rightarrow>nat\<rightarrow>A*C<~>C; C:ChTy \<rbrakk> \<Longrightarrow>
+    Q:nat\<rightarrow>nat\<rightarrow>A*C<R>C \<longrightarrow>
+    [[pow(A,w,D(A)), pow(C,w,D(C))]] ;; (Q`k`m) =
+    (Q`k`m) ;; pow(C,w,D(C))"
+apply(induct_tac w, safe)
+apply((subst powf_zero_iff)+)
+apply(subst par_Id, subst Id_left, typecheck, 
+      subst Id_right, typecheck, simp)
+apply(subst powf_succ2, typecheck)
+apply(subst powf_succ2, typecheck)
+apply(subst par_comb[THEN sym], typecheck)
+apply(subst comp_assoc, typecheck, simp)
+apply(subst powf_succ, simp)
+apply(subst comp_assoc[THEN sym], typecheck) back
+apply(subst D_eq_parD)
+apply(rule retime_D_comm)
+apply(intro RubyR, simp)
+apply(rule powfR, simp+)
+apply(rule lam_type, intro RubyR, simp)
+done
 
 end

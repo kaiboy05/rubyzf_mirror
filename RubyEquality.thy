@@ -313,6 +313,13 @@ apply(intro comp_eq)
 apply(subst Fst_def, simp)
 done
 
+theorem Fst_par_comp2: "\<lbrakk> R:C<~>D; S:D<~>E; T:A<~>B \<rbrakk> \<Longrightarrow> [[R,T]];;Fst(B,S) = [[R;;S,T]]"
+apply(subst Id_right[of T A B, THEN sym], simp) back
+apply(subst par_comb[THEN sym], typecheck)
+apply(intro comp_eq)
+apply(subst Fst_def, simp)
+done
+
 theorem Snd_par_comp: "\<lbrakk> R:C<~>D; S:D<~>E; T:A<~>B \<rbrakk> \<Longrightarrow> Snd(A,R);;[[T,S]] = [[T,R;;S]]"
 apply(subst Id_left[of T A B, THEN sym], simp) back
 apply(subst par_comb[THEN sym], typecheck)
@@ -393,9 +400,47 @@ defer
 apply(rule reorgI, simp+, intro RubyI, simp+)
 done
 
+theorem duplicate: "\<lbrakk> R:A<~>B; function(R) \<rbrakk> \<Longrightarrow> R;;dub(B) = dub(A);;[[R,R]]"
+apply(rule, auto)
+apply(subgoal_tac "R ;; dub(B) : _<~>_", typecheck, simp_all)
+apply(drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim compE, typecheck, simp, elim dubE, typecheck)
+apply(intro RubyI, rule dubI, simp)
+apply(intro RubyI, simp+)
+apply(subgoal_tac "dub(A) ;; [[R,R]] : _<~>_", typecheck, simp_all)
+apply(drule subsetD, simp, safe, elim sig_pairE, simp)
+apply(elim compE, typecheck, simp_all)
+apply(elim sig_pairE, simp, elim RubyE, typecheck, simp)
+apply(drule function_apply_equality, simp)
+apply(frule function_apply_equality, simp+)
+apply(intro RubyI, simp+)
+apply(intro RubyI, simp)
+done
 
-find_theorems "reorg"
-find_theorems "_ : domain(_)"
-find_theorems "_ = _" "_ ;; _ = _;; _"
+theorem pow_pow_comp: 
+  "\<lbrakk> r:nat; w:nat; R:A<~>A \<rbrakk> \<Longrightarrow> 
+    pow(A,r,R) ;; pow(A,w,R) = pow(A, r #+ w, R)"
+apply(induct_tac w, simp)
+apply(subst powf_zero_iff, rule Id_right, typecheck, simp)
+apply(subst powf_succ, simp)
+apply(subst comp_assoc[THEN sym], typecheck, simp+)
+apply(subst powf_succ, simp)
+done
+
+theorem pow_pow_comp_comm: 
+  "\<lbrakk> r:nat; w:nat; R:A<~>A \<rbrakk> \<Longrightarrow> 
+    pow(A,r,R) ;; pow(A,w,R) = pow(A,w,R) ;; pow(A,r,R)"
+apply(induct_tac w)
+apply((subst powf_zero_iff)+)
+apply((subst Id_right Id_left, typecheck)+, simp)
+apply(subst powf_succ)
+apply(subst powf_succ2, simp+)
+apply(subst comp_assoc[THEN sym], typecheck, simp+)
+apply(subst pow_pow_comp, simp+)
+apply(subst comp_assoc, typecheck, simp+)
+apply(subst pow_pow_comp, simp+)
+apply(subst powf_succ2[THEN sym], simp+)
+apply(subst powf_succ, simp)
+done
 
 end
