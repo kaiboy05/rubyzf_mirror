@@ -43,8 +43,8 @@ definition apr :: "[i, i] \<Rightarrow> i" where
   "apr(A, n) == spread({ab:(nlist[n]A*A)*nlist[succ(n)]A.
   EX a1 a2. ab = <<a1, a2>, nsnoc(n, a1, a2)>})"
 
-definition app :: "[i, i, i] \<Rightarrow> i" where
-  "app(A, n, m) == spread({ab:(nlist[n]A*nlist[m]A)*nlist[n+m]A.
+definition rapp :: "[i, i, i] \<Rightarrow> i" where
+  "rapp(A, n, m) == spread({ab:(nlist[n]A*nlist[m]A)*nlist[n #+ m]A.
   EX a1 a2. ab = <<a1, a2>, napp(n, m, a1, a2)>})"
 
 theorem reorg_type: "reorg(A,B,C): (A*B)*C <~>A*B*C"
